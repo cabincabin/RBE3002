@@ -1,0 +1,2 @@
+#exclude pycharm setup info
+/scripts/.idea/*

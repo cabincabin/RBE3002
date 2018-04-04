@@ -70,10 +70,12 @@ class AStar:
 
             if current.isSame(endNode):
                 # find a way to retrace the path here
-                # return previousSteps + Current as a path
                 print("--------------A Star Loop Ended-------------")
                 print("Path is found")
                 pathFound = True
+                #previousSteps.append(current)
+                print("This is the path: " + str(previousSteps.items()))
+                return previousSteps
                 continue
 
 

@@ -58,7 +58,7 @@ class Robot:
         yaw_current = self._yaw
 
         # Calculate the angle to turn to in order to drive to point
-        temp_angle = math.atan2((y_dest - y_current) ,(x_dest - x_current))
+        temp_angle = math.atan2((y_dest - y_current),(x_dest - x_current))
 
         if(temp_angle < 0):
             temp_angle = temp_angle + (2*math.pi)

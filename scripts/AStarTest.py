@@ -25,9 +25,11 @@ class AStar:
 
     # Find the best path
     def findPath(self):
-        evaluated = []
+        evaluated = Q.PriorityQueue()
         notEvaluated = Q.PriorityQueue()
+        notEvaluated.put((startNode.fCost, startNode))
 
+        ##################### TESTING CODE #####################
         newNode1 = WayPoint(20,130)
         newNode2 = WayPoint(110,20)
         newNode1.calculateGCost(startNode)
@@ -37,14 +39,18 @@ class AStar:
         newNode1.calculateFCost()
         newNode2.calculateFCost()
 
-        notEvaluated.put((startNode.fCost, startNode))
         notEvaluated.put((newNode1.fCost, newNode1))
         notEvaluated.put((newNode2.fCost, newNode2))
-        previousSteps = []
 
-        gCostGraph = [] #map with default value 100 # TODO What is this?
+        startNode.connectedNodes = [newNode1, newNode2]
+        newNode1.connectedNodes = [newNode2, endNode]
+        ###################### END TESTING CODE #################
+        previousSteps = {}
 
-        #gCostGraph[startNode] = 0 # Cost of travelling from start node to start node is 0
+        # Dictionary of Gcosts
+        gCost = {} # TODO What is this?
+
+        gCost[startNode] = 0 # Cost of travelling from start node to start node is 0
 
         #fCostGraph[startNode] = self.heuristicCost(startNode) # Calculate the heuristic cost
 
@@ -56,8 +62,37 @@ class AStar:
 
             if current.isSame(endNode):
                 # find a way to retrace the path here
+                # return previousSteps + Current as a path
+                print("--------------A Star Loop Ended-------------")
+                print("Path is found")
+                pass
+
+
+            evaluated.put((current.fCost, current))
+
+            # Check the surrounding neighbors of current
+
+            for neighbor in current.connectedNodes:
+                # Left Neighbor
+
+                if neighbor in current.connectedNodes:
+                    continue
+
+                tentative_gCost = gCost[current] + current.calculateDistance(neighbor)
+
+                # Neighbor is not yet in our discovered set, add it
+                if neighbor not in notEvaluated:
+                    notEvaluated.put((neighbor.fCost, neighbor))
+                elif (tentative_gCost >= gCost[neighbor]):
+                    # This is a better path
+                    continue
+
+                previousSteps[neighbor] = current
+                gCost[neighbor] = tentative_gCost
+                fCost[neigbor] = gCost[neighbor] + self.heuristicCost(neighbor)
 
         print("--------------A Star Loop Ended-------------")
+        print("We have not found a path")
 
     def heuristicCost(self, wayPoint):
         return math.sqrt((endNode.x - wayPoint.x) ** 2 + (endNode.y - wayPoint.y) ** 2)
@@ -69,21 +104,20 @@ class WayPoint:
         self.x = x
         self.y = y
         self.hCost = 0
+        # 100 for wall
+        # 0 for empty
+        # -1 for unknown
         self.cost = 0
         self.gCost = 0
         self.fCost = 0
+
+        # Array containing all the connected nodes to this node
+        self.connectedNodes = []
 
     # The waypoint's historical cost
     def calculateHCost(self, startNode):
         # The Manhattan Distance to the beginning
         self.hCost = (self.x - startNode.x) + (self.y - startNode.y)
-
-    # Set the cost for a WayPoint
-    def setCost(self, cost):
-        # 100 for wall
-        # 0 for empty
-        # -1 for unknown
-        self.cost = cost
 
     def calculateGCost(self, endNode):
         # Euclidian Distance to the end
@@ -94,10 +128,14 @@ class WayPoint:
 
     # Check if this node and compareNode are occupying the same space
     def isSame(self, compareNode):
-        if( (compareNode.x == self.x) && (compareNode.y == self.y)):
+        if( (compareNode.x == self.x) and (compareNode.y == self.y)):
             return True
         else:
             return False
+
+    # Return the distance between this node and a compared node
+    def calculateDistance(self, compareNode):
+        return (math.sqrt(((self.x - compareNode.x) ** 2) + ( (self.y - compareNode.y)** 2) ))
 
 if __name__ == '__main__':
     endNode = WayPoint(100,100)

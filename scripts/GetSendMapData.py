@@ -12,7 +12,7 @@
 import rospy, tf, copy, math, roslib, sys
 from AStarTest import WayPoint, AStar
 from geometry_msgs.msg import Point, Twist, Pose, PoseStamped
-from nav_msgs.msg import OccupancyGrid, GridCells
+from nav_msgs.msg import OccupancyGrid, GridCells, Path
 from tf.transformations import euler_from_quaternion
 import numpy as np
 from std_msgs.msg import String
@@ -37,6 +37,7 @@ class GridSpacePathing:
         self._pub = rospy.Publisher('/nav_msgs/GridCells', GridCells, None, queue_size=1)
         self._pub1 = rospy.Publisher('/nav_msgs/GridCells1', GridCells, None, queue_size=1)
         self._pub2 = rospy.Publisher('/nav_msgs/GridCells2', GridCells, None, queue_size=1)
+        self._pub3 = rospy.Publisher('/Aplan', Path, None, queue_size=1)
         print("here")
         rospy.Timer(rospy.Duration(1), self.UpdateMapOccupancy) #will be useful for D*
 
@@ -78,7 +79,7 @@ class GridSpacePathing:
 
         # Drawing the path cells
         grid = GridCells()
-
+        pathDisp = Path()
         reached = False
 
         prevNode = self.goalWay
@@ -88,6 +89,9 @@ class GridSpacePathing:
             p.x = node.point.x
             p.y = node.point.y
             p.z = 0
+            pose = PoseStamped()
+            pose.pose.position = node.point
+            pathDisp.poses.append(pose)
             grid.cells.append(p)
             prevNode = node
 
@@ -97,8 +101,9 @@ class GridSpacePathing:
         grid.cell_height = self._currmap.info.resolution
         grid.cell_width = self._currmap.info.resolution
         grid.header.frame_id = "map"
+        pathDisp.header.frame_id = "map"
 
-
+        self._pub3.publish(pathDisp)
         self._pub.publish(grid)
 
         self.drawStartEnd()
@@ -134,7 +139,6 @@ class GridSpacePathing:
         gridEnd.cell_height = self._currmap.info.resolution
         gridEnd.cell_width = self._currmap.info.resolution
         gridEnd.header.frame_id = "map"
-
 
         self._pub2.publish(gridEnd)
 

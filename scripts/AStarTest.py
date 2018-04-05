@@ -122,12 +122,18 @@ class AStar:
         return math.sqrt((self.endNode.point.x - wayPoint.point.x) ** 2 + (self.endNode.point.y - wayPoint.point.y) ** 2)
 
     def checkIfInArray(self, queue, wayPoint):
+        listQ = []
         while not queue.empty():
             itemGet = queue.get()
-            if(wayPoint.isSame(itemGet[1])):
+            listQ.append(itemGet)
+            if wayPoint == itemGet[1] or (wayPoint.point.x == itemGet[1].point.x and wayPoint.point.y == itemGet[1].point.y):
+                for i in range(len(listQ)):
+                    queue.put(listQ[i])
                 return True
         else:
-             return False
+            for i in range(len(listQ)):
+                queue.put(listQ[i])
+            return False
 
 class WayPoint:
 

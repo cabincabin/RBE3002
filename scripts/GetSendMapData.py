@@ -104,7 +104,7 @@ class GridSpacePathing:
         grid.header.frame_id = "map"
         pathDisp.header.frame_id = "map"
 
-
+        #self._pub3.publish(pathDisp)
         pathDisp2 = Path()
         pathDisp2.poses.append(goal)
         prevang = -1000000

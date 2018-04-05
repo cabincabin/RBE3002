@@ -13,7 +13,7 @@ import rospy, tf, copy, math, roslib, sys
 from AStarTest import WayPoint, AStar
 from geometry_msgs.msg import Point, Twist, Pose, PoseStamped
 from nav_msgs.msg import OccupancyGrid, GridCells, Path
-from tf.transformations import euler_from_quaternion
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
 import numpy as np
 from std_msgs.msg import String
 ##########################################################
@@ -104,8 +104,29 @@ class GridSpacePathing:
         grid.header.frame_id = "map"
         pathDisp.header.frame_id = "map"
 
-        self._pub3.publish(pathDisp)
+
+        pathDisp2 = Path()
+        pathDisp2.poses.append(goal)
+        prevang = -1000000
+        for i in range(len(pathDisp.poses)-1):
+            if i > 0:
+                ang = math.atan2(pathDisp.poses[i].pose.position.y-pathDisp.poses[i-1].pose.position.y, pathDisp.poses[i].pose.position.x-pathDisp.poses[i-1].pose.position.x)
+                quat = quaternion_from_euler(0,0,ang+math.pi)
+                pathDisp.poses[i+1].pose.orientation.x = quat[0]
+                pathDisp.poses[i+1].pose.orientation.y = quat[1]
+                pathDisp.poses[i+1].pose.orientation.z = quat[2]
+                pathDisp.poses[i+1].pose.orientation.w = quat[3]
+                # if i > 1:
+                #     pathDisp.poses[i-2].pose.position=pathDisp.poses[i-1].pose.position
+                if not ((ang > prevang-.25) and (ang < prevang+.25)):
+                    pathDisp2.poses.append(pathDisp.poses[i])
+                    prevang = ang
+        pathDisp2.header.frame_id = "map"
+
         self._pub4.publish(grid)
+        self._pub3.publish(pathDisp2)
+
+
 
         self.drawStartEnd()
 

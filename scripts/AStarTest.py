@@ -78,7 +78,7 @@ class AStar:
                 print("Path is found")
                 pathFound = True
                 #previousSteps.append(current)
-                print("This is the path: " + str(previousSteps))
+                #print("This is the path: " + str(previousSteps))
                 return previousSteps
                 continue
 
@@ -88,10 +88,10 @@ class AStar:
 
             for neighbor in current.connectedNodes:
 
-                print("\t\tThis is the current neighbor under investigation: X: " + str(neighbor.point.x) + " Y: " + str(neighbor.point.y) + " F: " + str(neighbor.fCost))
+                #print("\t\tThis is the current neighbor under investigation: X: " + str(neighbor.point.x) + " Y: " + str(neighbor.point.y) + " F: " + str(neighbor.fCost))
 
                 if neighbor in evaluated:
-                    print("\t\t\tNeighbor is already evaluated")
+                    #print("\t\t\tNeighbor is already evaluated")
                     continue
 
                 tentative_gCost = gCost[current] + current.calculateMDistance(neighbor)
@@ -103,15 +103,15 @@ class AStar:
                     notEvaluated.put((fCost[neighbor], neighbor))
 
                 elif (tentative_gCost >= gCost[neighbor]):
-                    print("\t\t\tNot a good path")
+                    #print("\t\t\tNot a good path")
                     # This is NOT a better path
                     continue
 
-                print("\t\t\tGood path")
+                #print("\t\t\tGood path")
                 previousSteps[neighbor] = current
                 gCost[neighbor] = tentative_gCost
                 fCost[neighbor] = abs(gCost[neighbor]) + abs(self.heuristicCost(neighbor))
-                print("Updated G: " + str(gCost[neighbor]) + " H: " + str(self.heuristicCost(neighbor)) + " F: " + str(fCost[neighbor]))
+                #print("Updated G: " + str(gCost[neighbor]) + " H: " + str(self.heuristicCost(neighbor)) + " F: " + str(fCost[neighbor]))
         if not pathFound:
             print("--------------A Star Loop Ended-------------")
             print("We have not found a path")

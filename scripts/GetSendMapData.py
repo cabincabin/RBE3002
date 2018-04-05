@@ -37,6 +37,7 @@ class GridSpacePathing:
         self._pub = rospy.Publisher('/nav_msgs/GridCells', GridCells, None, queue_size=1)
         self._pub1 = rospy.Publisher('/nav_msgs/GridCells1', GridCells, None, queue_size=1)
         self._pub2 = rospy.Publisher('/nav_msgs/GridCells2', GridCells, None, queue_size=1)
+        self._pub4 = rospy.Publisher('/nav_msgs/GridCells3', GridCells, None, queue_size=1)
         self._pub3 = rospy.Publisher('/Aplan', Path, None, queue_size=1)
         print("here")
         rospy.Timer(rospy.Duration(1), self.UpdateMapOccupancy) #will be useful for D*
@@ -104,7 +105,7 @@ class GridSpacePathing:
         pathDisp.header.frame_id = "map"
 
         self._pub3.publish(pathDisp)
-        self._pub.publish(grid)
+        self._pub4.publish(grid)
 
         self.drawStartEnd()
 

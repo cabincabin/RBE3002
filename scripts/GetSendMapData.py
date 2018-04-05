@@ -119,7 +119,10 @@ class GridSpacePathing:
                 # if i > 1:
                 #     pathDisp.poses[i-2].pose.position=pathDisp.poses[i-1].pose.position
                 if not ((ang > prevang-.25) and (ang < prevang+.25)):
-                    pathDisp2.poses.append(pathDisp.poses[i])
+                    p = PoseStamped()
+                    p.pose.position = pathDisp.poses[i-1].pose.position
+                    p.pose.orientation = pathDisp.poses[i].pose.orientation
+                    pathDisp2.poses.append(p)
                     prevang = ang
         pathDisp2.header.frame_id = "map"
 

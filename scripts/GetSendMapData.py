@@ -35,6 +35,8 @@ class GridSpacePathing:
         self._waypointlist = []
         rospy.Subscriber('/map', OccupancyGrid, self.getMapInfo, queue_size=10)
         self._pub = rospy.Publisher('/nav_msgs/GridCells', GridCells, None, queue_size=1)
+        self._pub1 = rospy.Publisher('/nav_msgs/GridCells1', GridCells, None, queue_size=1)
+        self._pub2 = rospy.Publisher('/nav_msgs/GridCells2', GridCells, None, queue_size=1)
         print("here")
         rospy.Timer(rospy.Duration(1), self.UpdateMapOccupancy) #will be useful for D*
 
@@ -50,16 +52,16 @@ class GridSpacePathing:
         closest = WayPoint(-10000, -10000)#ERROR LATER
         self.goalWay = WayPoint(transGoal.pose.position.x,transGoal.pose.position.y)
         for i in range(self._currmap.info.height * self._currmap.info.width):
-            if self._waypointlist[i].calculateMDistance(self.goalWay) < closest.calculateMDistance(self.goalWay):
+            if self._currmap.data[i] != 100 and self._waypointlist[i].calculateMDistance(self.goalWay) < closest.calculateMDistance(self.goalWay):
                 closest = self._waypointlist[i]
                 print("")
         self.goalWay = closest
 
         for i in range(self._currmap.info.height * self._currmap.info.width):
             if self._waypointlist[i] == self._robot:
-                print "-",
+                print "_",
             elif self._waypointlist[i] == self.goalWay:
-                print "+",
+                print "'",
             elif (i + 1) % self._currmap.info.width != 0:
                 if len(self._waypointlist[i].connectedNodes) == 0:
                     print " ",
@@ -71,9 +73,70 @@ class GridSpacePathing:
                 else:
                     print len(self._waypointlist[i].connectedNodes)
 
-        # star = AStar(self._robot, self.goalWay)
-        # star.findPath()
+        star = AStar(self._robot, self.goalWay)
+        path = star.findPath()
 
+        # Drawing the path cells
+        grid = GridCells()
+
+        reached = False
+
+        prevNode = self.goalWay
+        while not reached:
+            node = path.get(prevNode)
+            p = Point()
+            p.x = node.point.x
+            p.y = node.point.y
+            p.z = 0
+            grid.cells.append(p)
+            prevNode = node
+
+            if node.isSame(self._robot):
+                reached = True
+
+        grid.cell_height = self._currmap.info.resolution
+        grid.cell_width = self._currmap.info.resolution
+        grid.header.frame_id = "map"
+
+
+        self._pub.publish(grid)
+
+        self.drawStartEnd()
+
+    def drawStartEnd(self):
+        # Drawing the start cell
+        gridStart = GridCells()
+
+        node = self._robot
+        p = Point()
+        p.x = node.point.x
+        p.y = node.point.y
+        p.z = 1
+        gridStart.cells.append(p)
+        prevNode = node
+
+        gridStart.cell_height = self._currmap.info.resolution
+        gridStart.cell_width = self._currmap.info.resolution
+        gridStart.header.frame_id = "map"
+
+
+        self._pub1.publish(gridStart)
+
+        gridEnd = GridCells()
+
+        node = self.goalWay
+        p = Point()
+        p.x = node.point.x
+        p.y = node.point.y
+        p.z = 0
+        gridEnd.cells.append(p)
+
+        gridEnd.cell_height = self._currmap.info.resolution
+        gridEnd.cell_width = self._currmap.info.resolution
+        gridEnd.header.frame_id = "map"
+
+
+        self._pub2.publish(gridEnd)
 
     def getMapInfo(self, currmap):
         print("here")
@@ -113,7 +176,7 @@ class GridSpacePathing:
                         if currPoint.calculateMDistance(robot) < closest.calculateMDistance(robot):
                             closest = currPoint
                             print("")
-
+            grid.cells.append(closest.point)
             self._pub.publish(grid)
             self.boolthing = False
             self.boolthing2 = False

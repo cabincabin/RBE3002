@@ -27,32 +27,32 @@ class AStar:
     def findPath(self):
         evaluated = []
         notEvaluated = Q.PriorityQueue()
-        notEvaluated.put((startNode.fCost, startNode))
+        notEvaluated.put((self.startNode.fCost, self.startNode))
 
-        ##################### TESTING CODE #####################
-        newNode1 = WayPoint(20,130)
-        newNode2 = WayPoint(110,20)
-        newNode1.calculateGCost(startNode)
-        newNode2.calculateGCost(startNode)
-        newNode1.calculateHCost(endNode)
-        newNode2.calculateHCost(endNode)
-        newNode1.calculateFCost()
-        newNode2.calculateFCost()
-
-        notEvaluated.put((newNode1.fCost, newNode1))
-        notEvaluated.put((newNode2.fCost, newNode2))
-
-        startNode.connectedNodes = [newNode1, newNode2]
-        newNode1.connectedNodes = [startNode, newNode2, endNode]
-        endNode.connectedNodes = [newNode1]
-        newNode2.connectedNodes = [newNode1, startNode]
-
-        ###################### END TESTING CODE #################
+        # ##################### TESTING CODE #####################
+        # newNode1 = WayPoint(20,130)
+        # newNode2 = WayPoint(110,20)
+        # newNode1.calculateGCost(startNode)
+        # newNode2.calculateGCost(startNode)
+        # newNode1.calculateHCost(endNode)
+        # newNode2.calculateHCost(endNode)
+        # newNode1.calculateFCost()
+        # newNode2.calculateFCost()
+        #
+        # notEvaluated.put((newNode1.fCost, newNode1))
+        # notEvaluated.put((newNode2.fCost, newNode2))
+        #
+        # startNode.connectedNodes = [newNode1, newNode2]
+        # newNode1.connectedNodes = [startNode, newNode2, endNode]
+        # endNode.connectedNodes = [newNode1]
+        # newNode2.connectedNodes = [newNode1, startNode]
+        #
+        # ###################### END TESTING CODE #################
         previousSteps = {}
 
         gCost = {} # Dictionary of Gcosts
         fCost = {} # Dictionary of F Cost
-        gCost[startNode] = 0 # Cost of travelling from start node to start node is 0
+        gCost[self.startNode] = 0 # Cost of travelling from start node to start node is 0
 
         #fCostGraph[startNode] = self.heuristicCost(startNode) # Calculate the heuristic cost
 
@@ -60,24 +60,27 @@ class AStar:
 
         pathFound = False # Toggle variable to end loop
 
+        print("---------------- PATHFINDING STARTED -------------")
+        print("\nGOING FROM: " + str(self.startNode.point))
+        print("\nGOING TO: " + str(self.endNode.point) + "\n\n")
+
         while not notEvaluated.empty() and not pathFound:
             current = notEvaluated.get()[1]
-            current.calculateGCost(startNode)
-            current.calculateHCost(endNode)
+            current.calculateGCost(self.startNode)
+            current.calculateHCost(self.endNode)
             current.calculateFCost()
 
-            print("Node pulled: X: " + str(current.point.x) + " Y: " + str(current.point.y) + " FCost: " + str(current.fCost))
+            #print("Node pulled: X: " + str(current.point.x) + " Y: " + str(current.point.y) + " FCost: " + str(current.fCost))
 
-            if current.isSame(endNode):
+            if current.isSame(self.endNode):
                 # find a way to retrace the path here
                 print("--------------A Star Loop Ended-------------")
                 print("Path is found")
                 pathFound = True
                 #previousSteps.append(current)
-                print("This is the path: " + str(previousSteps.items()))
+                print("This is the path: " + str(previousSteps))
                 return previousSteps
                 continue
-
 
             evaluated.append((current))
 
@@ -92,29 +95,31 @@ class AStar:
                     continue
 
                 tentative_gCost = gCost[current] + current.calculateMDistance(neighbor)
-
-                try:
-                    gCost[neighbor]
-                except KeyError:
-                    gCost[neighbor] = current.calculateMDistance(neighbor)
+                #print("\n\n\n" + str(tentative_gCost) + "\n\n\n")
                 # Neighbor is not yet in our discovered set, add it
                 if not self.checkIfInArray(notEvaluated, neighbor):
-                    notEvaluated.put((neighbor.fCost, neighbor))
+                    gCost[neighbor] = gCost[current] + neighbor.calculateMDistance(current)
+                    fCost[neighbor] = gCost[neighbor] + self.heuristicCost(neighbor)
+                    notEvaluated.put((fCost[neighbor], neighbor))
 
                 elif (tentative_gCost >= gCost[neighbor]):
+                    print("\t\t\tNot a good path")
                     # This is NOT a better path
                     continue
 
+                print("\t\t\tGood path")
                 previousSteps[neighbor] = current
                 gCost[neighbor] = tentative_gCost
-                fCost[neighbor] = gCost[neighbor] + self.heuristicCost(neighbor)
-
+                fCost[neighbor] = abs(gCost[neighbor]) + abs(self.heuristicCost(neighbor))
+                print("Updated G: " + str(gCost[neighbor]) + " H: " + str(self.heuristicCost(neighbor)) + " F: " + str(fCost[neighbor]))
         if not pathFound:
             print("--------------A Star Loop Ended-------------")
             print("We have not found a path")
+            #previousSteps[self.endNode] = current
+            return previousSteps
 
     def heuristicCost(self, wayPoint):
-        return math.sqrt((endNode.point.x - wayPoint.point.x) ** 2 + (endNode.point.y - wayPoint.point.y) ** 2)
+        return math.sqrt((self.endNode.point.x - wayPoint.point.x) ** 2 + (self.endNode.point.y - wayPoint.point.y) ** 2)
 
     def checkIfInArray(self, queue, wayPoint):
         while not queue.empty():
@@ -148,7 +153,7 @@ class WayPoint:
 
     def calculateGCost(self, startNode):
         # Historical cost
-        self.gCost = (self.point.x - startNode.point.x) + (self.point.y - startNode.point.y)
+        self.gCost = abs(self.point.x - startNode.point.x) + abs(self.point.y - startNode.point.y)
 
     def calculateFCost(self):
         self.fCost = self.gCost + self.hCost

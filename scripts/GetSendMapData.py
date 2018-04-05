@@ -10,7 +10,7 @@
 
 #####################IMPORTS##############################
 import rospy, tf, copy, math, roslib, sys
-from AStarTest import WayPoint
+from AStarTest import WayPoint, AStar
 from geometry_msgs.msg import Point, Twist, Pose, PoseStamped
 from nav_msgs.msg import OccupancyGrid, GridCells
 from tf.transformations import euler_from_quaternion
@@ -26,6 +26,8 @@ class GridSpacePathing:
         self._pitch = 0
         self._yaw = 0
         self._current = Pose()
+        self._robot = WayPoint(-10000, -10000)
+        self.goalWay = WayPoint(-10000, -10000)
         rospy.Timer(rospy.Duration(0.1), self.timerCallback)
         self._currmap = None
         self.boolthing = False
@@ -39,6 +41,38 @@ class GridSpacePathing:
         # Timers and Subscribers
 
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.PathToPos, queue_size=1)
+
+    def PathToPos(self, goal):
+
+        self._odom_list.waitForTransform('/odom', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))
+        rospy.sleep(1.0)
+        transGoal = self._odom_list.transformPose('/odom',goal)  # transform the nav goal from the global coordinate system to the robot's coordinate system
+        closest = WayPoint(-10000, -10000)#ERROR LATER
+        self.goalWay = WayPoint(transGoal.pose.position.x,transGoal.pose.position.y)
+        for i in range(self._currmap.info.height * self._currmap.info.width):
+            if self._waypointlist[i].calculateMDistance(self.goalWay) < closest.calculateMDistance(self.goalWay):
+                closest = self._waypointlist[i]
+                print("")
+        self.goalWay = closest
+
+        for i in range(self._currmap.info.height * self._currmap.info.width):
+            if self._waypointlist[i] == self._robot:
+                print "-",
+            elif self._waypointlist[i] == self.goalWay:
+                print "+",
+            elif (i + 1) % self._currmap.info.width != 0:
+                if len(self._waypointlist[i].connectedNodes) == 0:
+                    print " ",
+                else:
+                    print len(self._waypointlist[i].connectedNodes),
+            else:
+                if len(self._waypointlist[i].connectedNodes) == 0:
+                    print " "
+                else:
+                    print len(self._waypointlist[i].connectedNodes)
+
+        # star = AStar(self._robot, self.goalWay)
+        # star.findPath()
 
 
     def getMapInfo(self, currmap):
@@ -83,6 +117,7 @@ class GridSpacePathing:
             self._pub.publish(grid)
             self.boolthing = False
             self.boolthing2 = False
+            self._robot = closest
 
             print("............")
             print(self._currmap.info.height*self._currmap.info.width)

@@ -5,7 +5,7 @@
 
 import rospy, tf, copy, math
 
-from geometry_msgs.msg import Twist, Pose, PoseStamped
+from geometry_msgs.msg import Twist, Pose, Point, PoseStamped
 from tf.transformations import euler_from_quaternion
 import math
 import Queue as Q
@@ -66,7 +66,7 @@ class AStar:
             current.calculateHCost(endNode)
             current.calculateFCost()
 
-            print("Node pulled: X: " + str(current.x) + " Y: " + str(current.y) + " FCost: " + str(current.fCost))
+            print("Node pulled: X: " + str(current.point.x) + " Y: " + str(current.point.y) + " FCost: " + str(current.fCost))
 
             if current.isSame(endNode):
                 # find a way to retrace the path here
@@ -85,7 +85,7 @@ class AStar:
 
             for neighbor in current.connectedNodes:
 
-                print("\t\tThis is the current neighbor under investigation: X: " + str(neighbor.x) + " Y: " + str(neighbor.y) + " F: " + str(neighbor.fCost))
+                print("\t\tThis is the current neighbor under investigation: X: " + str(neighbor.point.x) + " Y: " + str(neighbor.point.y) + " F: " + str(neighbor.fCost))
 
                 if neighbor in evaluated:
                     print("\t\t\tNeighbor is already evaluated")
@@ -114,7 +114,7 @@ class AStar:
             print("We have not found a path")
 
     def heuristicCost(self, wayPoint):
-        return math.sqrt((endNode.x - wayPoint.x) ** 2 + (endNode.y - wayPoint.y) ** 2)
+        return math.sqrt((endNode.point.x - wayPoint.point.x) ** 2 + (endNode.point.y - wayPoint.point.y) ** 2)
 
     def checkIfInArray(self, queue, wayPoint):
         while not queue.empty():
@@ -127,8 +127,9 @@ class AStar:
 class WayPoint:
 
     def __init__(self, x, y):
-        self.x = x
-        self.y = y
+        self.point = Point()
+        self.point.x = x
+        self.point.y = y
         self.hCost = 0 # Euclidian distance (future cost)
         # 100 for wall
         # 0 for empty
@@ -143,25 +144,25 @@ class WayPoint:
     # The waypoint's h cost
     def calculateHCost(self, endNode):
         # The Manhattan Distance to the beginning
-        self.hCost = math.sqrt((endNode.x - self.x)**2 + (endNode.y - self.y)**2)
+        self.hCost = math.sqrt((endNode.point.x - self.point.x)**2 + (endNode.point.y - self.point.y)**2)
 
     def calculateGCost(self, startNode):
         # Historical cost
-        self.gCost = (self.x - startNode.x) + (self.y - startNode.y)
+        self.gCost = (self.point.x - startNode.point.x) + (self.point.y - startNode.point.y)
 
     def calculateFCost(self):
         self.fCost = self.gCost + self.hCost
 
     # Check if this node and compareNode are occupying the same space
     def isSame(self, compareNode):
-        if((compareNode.x == self.x) and (compareNode.y == self.y)):
+        if((compareNode.point.x == self.point.x) and (compareNode.point.y == self.point.y)):
             return True
         else:
             return False
 
     # Return the Manhattan distance between this node and a compared node
     def calculateMDistance(self, compareNode):
-        return (abs(self.x - compareNode.x) + abs(self.y - compareNode.y))
+        return (abs(self.point.x - compareNode.point.x) + abs(self.point.y - compareNode.point.y))
 
 if __name__ == '__main__':
     endNode = WayPoint(1000,1000)

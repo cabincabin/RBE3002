@@ -1,8 +1,9 @@
 # !/usr/bin/env python
 # Clayton Dembski, Floris van Rossum
 # RBE3002 - Team 3
-# Lab 3 Code
+# Purpose: Lab 3 Astar Algorithm Code
 
+#####################IMPORTS##############################
 import rospy, tf, copy, math
 
 from geometry_msgs.msg import Twist, Pose, Point, PoseStamped
@@ -12,23 +13,25 @@ import Queue as Q
 
 import numpy as np
 from std_msgs.msg import String
+##########################################################
 
-
+# A star costs, heuristics and functions
 # h(n) = Manhattan distance to start
 # g(n) = Euclidian distance to goal
+# f(n) = g(n) + h(n)
 
 class AStar:
     def __init__(self, startNode, endNode):
-        # Put initialization here
         self.startNode = startNode # The starting waypoint
         self.endNode = endNode # The ending waypoint
 
-    # Find the best path
+    # Find the best path with a star
     def findPath(self):
-        evaluated = []
-        notEvaluated = Q.PriorityQueue()
-        notEvaluated.put((self.startNode.fCost, self.startNode))
+        evaluated = [] # Contains all the nodes that have been evaluated
+        notEvaluated = Q.PriorityQueue() # PriorityQueue of nodes based on fCost
+        notEvaluated.put((self.startNode.fCost, self.startNode)) # Insert start node
 
+        # This code was used to test the algorithm
         # ##################### TESTING CODE #####################
         # newNode1 = WayPoint(20,130)
         # newNode2 = WayPoint(110,20)
@@ -48,121 +51,121 @@ class AStar:
         # newNode2.connectedNodes = [newNode1, startNode]
         #
         # ###################### END TESTING CODE #################
-        previousSteps = {}
+        previousSteps = {} # Dictionary of the previous nodes chosen
 
-        gCost = {} # Dictionary of Gcosts
-        fCost = {} # Dictionary of F Cost
+        gCost = {} # Dictionary of Gcosts (key = node)
+        fCost = {} # Dictionary of F Cost, (key = node)
         gCost[self.startNode] = 0 # Cost of travelling from start node to start node is 0
-
-        #fCostGraph[startNode] = self.heuristicCost(startNode) # Calculate the heuristic cost
-
-        # evaluating = []
 
         pathFound = False # Toggle variable to end loop
 
+        # Printing that AStar is starting
         print("---------------- PATHFINDING STARTED -------------")
         print("\nGOING FROM: " + str(self.startNode.point))
         print("\nGOING TO: " + str(self.endNode.point) + "\n\n")
 
+        # AStar Loop
         while not notEvaluated.empty() and not pathFound:
-            current = notEvaluated.get()[1]
-            current.calculateGCost(self.startNode)
-            current.calculateHCost(self.endNode)
-            current.calculateFCost()
+            current = notEvaluated.get()[1] # Pull the best node from the queue based on its fCost
 
+            # Print statement for debugging
             #print("Node pulled: X: " + str(current.point.x) + " Y: " + str(current.point.y) + " FCost: " + str(current.fCost))
 
+            # Check if the current node pulled is our goal
             if current.isSame(self.endNode):
-                # find a way to retrace the path here
+                # We have reached the end node, exit the loop and return path
                 print("--------------A Star Loop Ended-------------")
                 print("Path is found")
                 pathFound = True
-                #previousSteps.append(current)
                 #print("This is the path: " + str(previousSteps))
                 return previousSteps
                 continue
 
+            # Add current to the evalated array
             evaluated.append((current))
 
             # Check the surrounding neighbors of current
-
             for neighbor in current.connectedNodes:
-
+                # Print statment for debugging
                 #print("\t\tThis is the current neighbor under investigation: X: " + str(neighbor.point.x) + " Y: " + str(neighbor.point.y) + " F: " + str(neighbor.fCost))
 
+                # Check if the neighbor has been checked before
                 if neighbor in evaluated:
+                    # Neighbor has already been checked so exit loop
+                    # Print for debugging
                     #print("\t\t\tNeighbor is already evaluated")
                     continue
 
+                # Calculate the new GCost with the neighbor
                 tentative_gCost = gCost[current] + current.calculateMDistance(neighbor)
+
+                # Print statement for debugging
                 #print("\n\n\n" + str(tentative_gCost) + "\n\n\n")
-                # Neighbor is not yet in our discovered set, add it
+
+                # Check if neighbor has been discovered yet
                 if not self.checkIfInArray(notEvaluated, neighbor):
+                    # Neighbor is not yet in our discovered set, add it to PriorityQueue
                     gCost[neighbor] = gCost[current] + neighbor.calculateMDistance(current)
                     fCost[neighbor] = gCost[neighbor] + self.heuristicCost(neighbor)
                     notEvaluated.put((fCost[neighbor], neighbor))
 
+                # Check if this is a good path
                 elif (tentative_gCost >= gCost[neighbor]):
+                    # tentative_gCost is higher than gCost[neighbor] so this is a bad path
                     #print("\t\t\tNot a good path")
-                    # This is NOT a better path
                     continue
 
                 #print("\t\t\tGood path")
+                # Good path choice, update the values and costs, add the node to previousSteps path
                 previousSteps[neighbor] = current
                 gCost[neighbor] = tentative_gCost
                 fCost[neighbor] = abs(gCost[neighbor]) + abs(self.heuristicCost(neighbor))
+                # Print statement for debugging
                 #print("Updated G: " + str(gCost[neighbor]) + " H: " + str(self.heuristicCost(neighbor)) + " F: " + str(fCost[neighbor]))
+
+        # If this is reached, no path was found and print an error
         if not pathFound:
             print("--------------A Star Loop Ended-------------")
             print("We have not found a path")
             #previousSteps[self.endNode] = current
             return previousSteps
 
+    # Calculate the heuristics cost with a certain waypoint
     def heuristicCost(self, wayPoint):
         return math.sqrt((self.endNode.point.x - wayPoint.point.x) ** 2 + (self.endNode.point.y - wayPoint.point.y) ** 2)
 
+    # Method to check if a node is contained in the PriorityQueue
+    # Copies the PriorityQueue to an array, then reconstructs the PriorityQueue
     def checkIfInArray(self, queue, wayPoint):
         listQ = []
         while not queue.empty():
             itemGet = queue.get()
             listQ.append(itemGet)
             if wayPoint == itemGet[1] or (wayPoint.point.x == itemGet[1].point.x and wayPoint.point.y == itemGet[1].point.y):
+                # We have found the node we were looking for
                 for i in range(len(listQ)):
                     queue.put(listQ[i])
                 return True
-        else:
-            for i in range(len(listQ)):
-                queue.put(listQ[i])
-            return False
+        # The node we were looking is not found
+        for i in range(len(listQ)):
+            queue.put(listQ[i])
+        return False
 
+# Waypoint (node) class
+# Purpose: A node for a graph, called wayPoint to avoid confusion
 class WayPoint:
 
     def __init__(self, x, y):
         self.point = Point()
         self.point.x = x
         self.point.y = y
-        self.hCost = 0 # Euclidian distance (future cost)
         # 100 for wall
         # 0 for empty
         # -1 for unknown
-        self.cost = 0
-        self.gCost = 0 # Historical cost
         self.fCost = 0 # Total cost
 
         # Array containing all the connected nodes to this node
         self.connectedNodes = []
-
-    # The waypoint's h cost
-    def calculateHCost(self, endNode):
-        # The Manhattan Distance to the beginning
-        self.hCost = math.sqrt((endNode.point.x - self.point.x)**2 + (endNode.point.y - self.point.y)**2)
-
-    def calculateGCost(self, startNode):
-        # Historical cost
-        self.gCost = abs(self.point.x - startNode.point.x) + abs(self.point.y - startNode.point.y)
-
-    def calculateFCost(self):
-        self.fCost = self.gCost + self.hCost
 
     # Check if this node and compareNode are occupying the same space
     def isSame(self, compareNode):

@@ -11,6 +11,8 @@ from tf.transformations import euler_from_quaternion
 import math
 import Queue as Q
 
+from Draw import drawGrid
+
 import numpy as np
 from std_msgs.msg import String
 ##########################################################
@@ -83,6 +85,7 @@ class AStar:
 
             # Add current to the evalated array
             evaluated.append((current))
+            drawGrid('/nav_msgs/GridCellsChecked', evaluated)
 
             # Check the surrounding neighbors of current
             for neighbor in current.connectedNodes:
@@ -147,6 +150,7 @@ class AStar:
                     queue.put(listQ[i])
                 return True
         # The node we were looking is not found
+
         for i in range(len(listQ)):
             queue.put(listQ[i])
         return False

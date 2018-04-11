@@ -23,9 +23,10 @@ from std_msgs.msg import String
 # f(n) = g(n) + h(n)
 
 class AStar:
-    def __init__(self, startNode, endNode):
+    def __init__(self, startNode, endNode, distance):
         self.startNode = startNode # The starting waypoint
         self.endNode = endNode # The ending waypoint
+        self._distance = distance
 
     # Find the best path with a star
     def findPath(self):
@@ -85,7 +86,7 @@ class AStar:
 
             # Add current to the evalated array
             evaluated.append((current))
-            drawGrid('/nav_msgs/GridCellsChecked', evaluated)
+            drawGrid('/nav_msgs/GridCellsChecked', evaluated, self._distance)
 
             # Check the surrounding neighbors of current
             for neighbor in current.connectedNodes:
@@ -141,16 +142,18 @@ class AStar:
     # Copies the PriorityQueue to an array, then reconstructs the PriorityQueue
     def checkIfInArray(self, queue, wayPoint):
         listQ = []
+        listQ2 = []
         while not queue.empty():
             itemGet = queue.get()
             listQ.append(itemGet)
+            listQ2.append(itemGet[1])
             if wayPoint == itemGet[1] or (wayPoint.point.x == itemGet[1].point.x and wayPoint.point.y == itemGet[1].point.y):
                 # We have found the node we were looking for
                 for i in range(len(listQ)):
                     queue.put(listQ[i])
                 return True
         # The node we were looking is not found
-
+        drawGrid('nav_msgs/GridCellsFrontier',listQ2, self._distance)
         for i in range(len(listQ)):
             queue.put(listQ[i])
         return False

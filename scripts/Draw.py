@@ -16,8 +16,8 @@ import numpy as np
 from std_msgs.msg import String
 ##########################################################
 
-def drawGrid(topic, nodes):
-
+def drawGrid(topic, nodes,distance):
+    clearMap(topic)
     if len(nodes) > 2:
         grid = GridCells()
         pathDisp = Path()
@@ -41,13 +41,15 @@ def drawGrid(topic, nodes):
             pathDisp.poses.append(pose)
             grid.cells.append(p)
 
-        grid.cell_height = dist
-        grid.cell_width = dist
+        grid.cell_height = distance
+        grid.cell_width = distance
 
         grid.header.frame_id = "map"
 
         tempPublisher = rospy.Publisher(topic, GridCells, None, queue_size=1)
         tempPublisher.publish(grid)
 
-def clearMap(grid):
-    
+def clearMap(topic):
+    emptyGrid = GridCells()
+    tempPublisher = rospy.Publisher(topic, GridCells, None, queue_size=1)
+    tempPublisher.publish(emptyGrid)

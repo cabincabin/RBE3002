@@ -14,7 +14,7 @@ from geometry_msgs.msg import Point, Twist, Pose, PoseStamped
 from nav_msgs.msg import OccupancyGrid, GridCells, Path
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
 import numpy as np
-from Draw import drawGrid
+from Draw import clearMap,drawGrid
 from std_msgs.msg import String
 ##########################################################
 
@@ -52,7 +52,7 @@ class GridSpacePathing:
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.PathToPos, queue_size=1)
 
     def PathToPos(self, goal):
-
+        self.clearAllGrids()
         #get the goal position from the robot transformation
         self._odom_list.waitForTransform('/odom', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))
         rospy.sleep(1.0)
@@ -92,7 +92,7 @@ class GridSpacePathing:
                     print len(self._waypointlist[i].connectedNodes)
 
         #get the path
-        star = AStar(self._robot, self._goalWay)
+        star = AStar(self._robot, self._goalWay, self._currmap.info.resolution)
         path = star.findPath()
 
         # Drawing the path cells
@@ -198,7 +198,13 @@ class GridSpacePathing:
         print(currmap.data[0])
         self._currmap = currmap
 
-
+    def clearAllGrids(self):
+        clearMap('/nav_msgs/GridCellsEnd')
+        clearMap('/nav_msgs/GridCellsStart')
+        clearMap('/nav_msgs/GridCellsPath')
+        emptyPath = Path()
+        tempPublisher = rospy.Publisher('APlan', Path, queue_size = 1)
+        tempPublisher.publish(emptyPath)
 
     def UpdateMapOccupancy(self, evprent): #this should update all nodes and recompute path if needed
         if self._currmap != None and self.RobotPoseInit == True and self.UpdatePathOnce == True: #remove the only once boolean for D*, will wait until the robot's position is found

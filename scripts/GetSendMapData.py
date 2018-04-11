@@ -55,7 +55,7 @@ class GridSpacePathing:
         #get the goal position from the robot transformation
         self._odom_list.waitForTransform('/odom', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))
         rospy.sleep(1.0)
-        transGoal = self._odom_list.transformPose('/odom',goal)  # transform the nav goal from the global coordinate system to the robot's coordinate system
+        transGoal = self._odom_list.transformPose('map', goal)  # transform the nav goal from the global coordinate system to the robot's coordinate system
         closest = self._waypointlist[0]
 
         #create a goal waypoint
@@ -123,16 +123,20 @@ class GridSpacePathing:
 
         #self._pub3.publish(pathDisp)
         #get the
-        pathDisp2 = Path()
-        pathDisp2.poses.append(goal)
-        prevang = -1000000
+        # pathDisp2 = Path()
+        # pathDisp2.poses.append(goal)
+        # prevang = -1000000
+
+        pathDisp.poses.reverse()
+        pathDisp.poses.append(goal)
+
 
         #get only the intermediate changes
         for i in range(len(pathDisp.poses)-1):
             if i > 0:
                 #calculate the angle and add it to the corrisponding node
                 ang = math.atan2(pathDisp.poses[i].pose.position.y-pathDisp.poses[i-1].pose.position.y, pathDisp.poses[i].pose.position.x-pathDisp.poses[i-1].pose.position.x)
-                quat = quaternion_from_euler(0,0,ang+math.pi)
+                quat = quaternion_from_euler(0,0,ang)
                 pathDisp.poses[i+1].pose.orientation.x = quat[0]
                 pathDisp.poses[i+1].pose.orientation.y = quat[1]
                 pathDisp.poses[i+1].pose.orientation.z = quat[2]
@@ -140,17 +144,17 @@ class GridSpacePathing:
                 # if i > 1:
                 #     pathDisp.poses[i-2].pose.position=pathDisp.poses[i-1].pose.position
                 # only add intermediate poses: ones where the angle changes
-                if not ((ang > prevang-.25) and (ang < prevang+.25)):
-                    p = PoseStamped()
-                    p.pose.position = pathDisp.poses[i-1].pose.position
-                    p.pose.orientation = pathDisp.poses[i].pose.orientation
-                    pathDisp2.poses.append(p)
-                    prevang = ang
-        pathDisp2.header.frame_id = "map"
+                # if not ((ang > prevang-.25) and (ang < prevang+.25)):
+                #     p = PoseStamped()
+                #     p.pose.position = pathDisp.poses[i-1].pose.position
+                #     p.pose.orientation = pathDisp.poses[i].pose.orientation
+                #     pathDisp2.poses.append(p)
+                #     prevang = ang
+        #pathDisp2.header.frame_id = "map"
 
         #show the path
         self._ShowPathGrid.publish(grid)
-        self._ShowPathPath.publish(pathDisp2)
+        self._ShowPathPath.publish(pathDisp)
 
         self.drawStartAndEnd()
 

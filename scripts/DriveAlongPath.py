@@ -221,19 +221,28 @@ class Robot:
 
         print('This is the dest_angle: ' + str(dest_angle))
 
-        diff_angle = dest_angle - self._yaw
-        print('This is the difference: ' + str(diff_angle))
-
         thresh = 0.2
 
+        diff_angle = abs(dest_angle) - abs(self._yaw)
+
+        print('This is the difference: ' + str(diff_angle))
+
+        if( diff_angle > math.pi):
+            rotateLeft = True
+            diff_angle = -1
+
+        if(diff_angle < -math.pi):
+            rotateLeft = False
+            diff_angle = 1
+
         # Find out which way to turn
-        if(angle < 0):
+        if(diff_angle < 0):
             # Angle is negative, turn clockwise
 
-            diff_angle = dest_angle - self._yaw
+            diff_angle = abs(dest_angle) - abs(self._yaw)
             # Continually rotate until angle is reached
             while abs(diff_angle) > thresh:
-                diff_angle = dest_angle - self._yaw
+                diff_angle = abs(dest_angle) - abs(self._yaw)
                 print('This is the difference: ' + str(diff_angle))
                 self.spinWheels(0.2,-0.2, 0.1)
             # Stop motors

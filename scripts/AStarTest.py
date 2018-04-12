@@ -27,33 +27,16 @@ class AStar:
         self.startNode = startNode # The starting waypoint
         self.endNode = endNode # The ending waypoint
         self._distance = distance
+        self.euclidianHeuristic = True
 
     # Find the best path with a star
     def findPath(self):
         evaluated = [] # Contains all the nodes that have been evaluated
         notEvaluated = Q.PriorityQueue() # PriorityQueue of nodes based on fCost
         notEvaluated.put((self.startNode.fCost, self.startNode)) # Insert start node
+        notEvaluatedCheck = []
+        notEvaluatedCheck.append(self.startNode)
 
-        # This code was used to test the algorithm
-        # ##################### TESTING CODE #####################
-        # newNode1 = WayPoint(20,130)
-        # newNode2 = WayPoint(110,20)
-        # newNode1.calculateGCost(startNode)
-        # newNode2.calculateGCost(startNode)
-        # newNode1.calculateHCost(endNode)
-        # newNode2.calculateHCost(endNode)
-        # newNode1.calculateFCost()
-        # newNode2.calculateFCost()
-        #
-        # notEvaluated.put((newNode1.fCost, newNode1))
-        # notEvaluated.put((newNode2.fCost, newNode2))
-        #
-        # startNode.connectedNodes = [newNode1, newNode2]
-        # newNode1.connectedNodes = [startNode, newNode2, endNode]
-        # endNode.connectedNodes = [newNode1]
-        # newNode2.connectedNodes = [newNode1, startNode]
-        #
-        # ###################### END TESTING CODE #################
         previousSteps = {} # Dictionary of the previous nodes chosen
 
         gCost = {} # Dictionary of Gcosts (key = node)
@@ -70,6 +53,7 @@ class AStar:
         # AStar Loop
         while not notEvaluated.empty() and not pathFound:
             current = notEvaluated.get()[1] # Pull the best node from the queue based on its fCost
+            notEvaluatedCheck.remove(current)
 
             # Print statement for debugging
             #print("Node pulled: X: " + str(current.point.x) + " Y: " + str(current.point.y) + " FCost: " + str(current.fCost))
@@ -107,11 +91,12 @@ class AStar:
                 #print("\n\n\n" + str(tentative_gCost) + "\n\n\n")
 
                 # Check if neighbor has been discovered yet
-                if not self.checkIfInArray(notEvaluated, neighbor):
+                if not self.checkIfInArray(notEvaluatedCheck, neighbor):
                     # Neighbor is not yet in our discovered set, add it to PriorityQueue
                     gCost[neighbor] = gCost[current] + neighbor.calculateMDistance(current)
                     fCost[neighbor] = gCost[neighbor] + self.heuristicCost(neighbor)
                     notEvaluated.put((fCost[neighbor], neighbor))
+                    notEvaluatedCheck.append(neighbor)
 
                 # Check if this is a good path
                 elif (tentative_gCost >= gCost[neighbor]):
@@ -136,27 +121,22 @@ class AStar:
 
     # Calculate the heuristics cost with a certain waypoint
     def heuristicCost(self, wayPoint):
-        return math.sqrt((self.endNode.point.x - wayPoint.point.x) ** 2 + (self.endNode.point.y - wayPoint.point.y) ** 2)
+        if self.euclidianHeuristic:
+            return math.sqrt((self.endNode.point.x - wayPoint.point.x) ** 2 + (self.endNode.point.y - wayPoint.point.y) ** 2)
+        else:
+            return (abs( self.endNode.point.x - wayPoint.point.x) + abs(self.endNode.point.y - wayPoint.point.y))
 
     # Method to check if a node is contained in the PriorityQueue
     # Copies the PriorityQueue to an array, then reconstructs the PriorityQueue
-    def checkIfInArray(self, queue, wayPoint):
-        listQ = []
-        listQ2 = []
-        while not queue.empty():
-            itemGet = queue.get()
-            listQ.append(itemGet)
-            listQ2.append(itemGet[1])
-            if wayPoint == itemGet[1] or (wayPoint.point.x == itemGet[1].point.x and wayPoint.point.y == itemGet[1].point.y):
-                # We have found the node we were looking for
-                for i in range(len(listQ)):
-                    queue.put(listQ[i])
-                return True
-        # The node we were looking is not found
-        drawGrid('nav_msgs/GridCellsFrontier',listQ2, self._distance)
-        for i in range(len(listQ)):
-            queue.put(listQ[i])
-        return False
+    def checkIfInArray(self, array, wayPoint):
+        if array.__contains__(wayPoint):
+            drawGrid('nav_msgs/GridCellsFrontier', array, self._distance)
+            return True
+            print("Return true")
+        else:
+            drawGrid('nav_msgs/GridCellsFrontier', array, self._distance)
+            return False
+            print("Return False")
 
 # Waypoint (node) class
 # Purpose: A node for a graph, called wayPoint to avoid confusion

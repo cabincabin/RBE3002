@@ -51,7 +51,7 @@ class GridSpacePathing:
         self._ShowEnd = rospy.Publisher('/nav_msgs/GridCellsEnd', GridCells, None, queue_size=1)
         self._ShowPathGrid = rospy.Publisher('/nav_msgs/GridCellsPath', GridCells, None, queue_size=1)
         self._ShowPathPath = rospy.Publisher('/Aplan', Path, None, queue_size=1)
-        print("here")
+        #print("here")
         rospy.Timer(rospy.Duration(1), self.CreateMapOccupancy) #will be useful for D*
 
         # Timers and Subscribers

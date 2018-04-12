@@ -132,16 +132,17 @@ class GridSpacePathing:
         pathDisp.poses.append(goal)
 
 
+
         #get only the intermediate changes
         for i in range(len(pathDisp.poses)-1):
             if i > 0:
                 #calculate the angle and add it to the corrisponding node
-                ang = math.atan2(pathDisp.poses[i].pose.position.y-pathDisp.poses[i-1].pose.position.y, pathDisp.poses[i].pose.position.x-pathDisp.poses[i-1].pose.position.x)
+                ang = math.atan2(-pathDisp.poses[i].pose.position.y+pathDisp.poses[i+1].pose.position.y, -pathDisp.poses[i].pose.position.x+pathDisp.poses[i+1].pose.position.x)
                 quat = quaternion_from_euler(0,0,ang)
-                pathDisp.poses[i+1].pose.orientation.x = quat[0]
-                pathDisp.poses[i+1].pose.orientation.y = quat[1]
-                pathDisp.poses[i+1].pose.orientation.z = quat[2]
-                pathDisp.poses[i+1].pose.orientation.w = quat[3]
+                pathDisp.poses[i].pose.orientation.x = quat[0]
+                pathDisp.poses[i].pose.orientation.y = quat[1]
+                pathDisp.poses[i].pose.orientation.z = quat[2]
+                pathDisp.poses[i].pose.orientation.w = quat[3]
                 # if i > 1:
                 #     pathDisp.poses[i-2].pose.position=pathDisp.poses[i-1].pose.position
                 # only add intermediate poses: ones where the angle changes

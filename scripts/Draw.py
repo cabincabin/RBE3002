@@ -21,7 +21,6 @@ def drawGrid(topic,nodes,distance):
     if len(nodes) > 2:
         grid = GridCells()
         pathDisp = Path()
-        reached = False
 
         # put the path into GridCells
 

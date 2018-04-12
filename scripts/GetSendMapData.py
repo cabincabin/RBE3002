@@ -32,7 +32,7 @@ class GridSpacePathing:
         self._robot = WayPoint(-1000000, -1000000)
         self._goalWay = WayPoint(-1000000, -1000000)
         rospy.Timer(rospy.Duration(0.1), self.timerCallback)
-        self._robotSize = .23
+        self._robotSize = .5
         self._currmap = None
         self.RobotPoseInit = False
         self.UpdatePathOnce = True
@@ -46,7 +46,7 @@ class GridSpacePathing:
         self._ShowEnd = rospy.Publisher('/nav_msgs/GridCellsEnd', GridCells, None, queue_size=1)
         self._ShowPathGrid = rospy.Publisher('/nav_msgs/GridCellsPath', GridCells, None, queue_size=1)
         self._ShowPathPath = rospy.Publisher('/Aplan', Path, None, queue_size=1)
-        print("here")
+        #print("here")
         rospy.Timer(rospy.Duration(1), self.UpdateMapOccupancy) #will be useful for D*
 
         # Timers and Subscribers

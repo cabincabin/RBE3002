@@ -4,15 +4,15 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Grid1
         - /TF1/Frames1
         - /TF1/Tree1
-        - /Map1/Status1
-        - /Global Map1/Costmap1
         - /Global Map1/Planner1
-        - /Local Map1
-        - /Full Plan1/Status1
         - /GridCells1
+        - /GridCells2
+        - /GridCells3
+        - /GridCells4
+        - /GridCells4/Status1
+        - /GridCells5
       Splitter Ratio: 0.5
     Tree Height: 772
   - Class: rviz/Selection
@@ -38,7 +38,7 @@ Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.5
-      Cell Size: 0.379999995
+      Cell Size: 1
       Class: rviz/Grid
       Color: 160; 160; 164
       Enabled: true
@@ -52,7 +52,7 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 100
+      Plane Cell Count: 10
       Reference Frame: <Fixed Frame>
       Value: true
     - Alpha: 1
@@ -499,32 +499,35 @@ Visualization Manager:
       Color: 25; 255; 0
       Enabled: true
       Name: GridCells
-      Topic: ""
+      Topic: /nav_msgs/GridCellsStart
       Value: true
     - Alpha: 1
-      Axes Length: 1
-      Axes Radius: 0.100000001
-      Class: rviz/Pose
-      Color: 255; 25; 0
+      Class: rviz/GridCells
+      Color: 25; 255; 0
       Enabled: true
-      Head Length: 0.300000012
-      Head Radius: 0.100000001
-      Name: Pose
-      Shaft Length: 1
-      Shaft Radius: 0.0500000007
-      Shape: Arrow
-      Topic: ""
-      Unreliable: false
+      Name: GridCells
+      Topic: /nav_msgs/GridCellsOcc
       Value: true
-    - Alpha: 0.699999988
-      Class: rviz/Map
-      Color Scheme: map
-      Draw Behind: false
+    - Alpha: 1
+      Class: rviz/GridCells
+      Color: 74; 14; 255
       Enabled: true
-      Name: Map
-      Topic: ""
-      Unreliable: false
-      Use Timestamp: false
+      Name: GridCells
+      Topic: /nav_msgs/GridCellsPath
+      Value: true
+    - Alpha: 1
+      Class: rviz/GridCells
+      Color: 25; 255; 0
+      Enabled: true
+      Name: GridCells
+      Topic: /nav_msgs/GridCellsEnd
+      Value: true
+    - Alpha: 1
+      Class: rviz/GridCells
+      Color: 255; 0; 0
+      Enabled: true
+      Name: GridCells
+      Topic: /nav_msgs/GridCellsFrontier
       Value: true
   Enabled: true
   Global Options:
@@ -549,7 +552,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -6.31002951
+      Angle: -6.72002983
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
@@ -559,11 +562,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 112.989632
+      Scale: 58.866993
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
-      X: 0.170501292
-      Y: 0.610266864
+      X: 0.325176299
+      Y: -0.0573021024
     Saved: ~
 Window Geometry:
   Displays:
@@ -581,5 +584,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1855
-  X: 62
+  X: 65
   Y: 24

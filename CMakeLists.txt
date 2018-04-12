@@ -7,6 +7,8 @@ project(RBE3002_D18_Team_03)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
@@ -72,6 +74,7 @@ find_package(catkin REQUIRED COMPONENTS
    std_msgs
  )
 
+catkin_package()
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
 ################################################
@@ -179,11 +182,10 @@ include_directories(
 # )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+ install(FILES
+   3002Setup.launch
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+ )
 
 #############
 ## Testing ##

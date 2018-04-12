@@ -16,8 +16,8 @@ import numpy as np
 from std_msgs.msg import String
 ##########################################################
 
-def drawGrid(topic, nodes,distance):
-    clearMap(topic)
+def drawGrid(topic,nodes,distance):
+    #clearMap(topic)
     if len(nodes) > 2:
         grid = GridCells()
         pathDisp = Path()

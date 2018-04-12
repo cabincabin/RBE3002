@@ -52,7 +52,7 @@ class GridSpacePathing:
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.PathToPos, queue_size=1)
 
     def PathToPos(self, goal):
-        self.clearAllGrids()
+        #self.clearAllGrids()
         #get the goal position from the robot transformation
         self._odom_list.waitForTransform('/odom', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))
         rospy.sleep(1.0)
@@ -70,26 +70,26 @@ class GridSpacePathing:
                 print("")
         self._goalWay = closest
 
-        #for every waypoint in the grid
-        #print out the waypoint to the user
-        for i in range(self._currmap.info.height * self._currmap.info.width):
-            #print the robot's position
-            if self._waypointlist[i] == self._robot:
-                print "_",
-            #print the goal's position
-            elif self._waypointlist[i] == self._goalWay:
-                print "'",
-            #print the number of nodes each node is connected to
-            elif (i + 1) % self._currmap.info.width != 0:
-                if len(self._waypointlist[i].connectedNodes) == 0:
-                    print " ",
-                else:
-                    print len(self._waypointlist[i].connectedNodes),
-            else:
-                if len(self._waypointlist[i].connectedNodes) == 0:
-                    print " "
-                else:
-                    print len(self._waypointlist[i].connectedNodes)
+        # #for every waypoint in the grid
+        # #print out the waypoint to the user
+        # for i in range(self._currmap.info.height * self._currmap.info.width):
+        #     #print the robot's position
+        #     if self._waypointlist[i] == self._robot:
+        #         print "_",
+        #     #print the goal's position
+        #     elif self._waypointlist[i] == self._goalWay:
+        #         print "'",
+        #     #print the number of nodes each node is connected to
+        #     elif (i + 1) % self._currmap.info.width != 0:
+        #         if len(self._waypointlist[i].connectedNodes) == 0:
+        #             print " ",
+        #         else:
+        #             print len(self._waypointlist[i].connectedNodes),
+        #     else:
+        #         if len(self._waypointlist[i].connectedNodes) == 0:
+        #             print " "
+        #         else:
+        #             print len(self._waypointlist[i].connectedNodes)
 
         #get the path
         star = AStar(self._robot, self._goalWay, self._currmap.info.resolution)
@@ -198,13 +198,13 @@ class GridSpacePathing:
         print(currmap.data[0])
         self._currmap = currmap
 
-    def clearAllGrids(self):
-        clearMap('/nav_msgs/GridCellsEnd')
-        clearMap('/nav_msgs/GridCellsStart')
-        clearMap('/nav_msgs/GridCellsPath')
-        emptyPath = Path()
-        tempPublisher = rospy.Publisher('APlan', Path, queue_size = 1)
-        tempPublisher.publish(emptyPath)
+    # def clearAllGrids(self):
+    #     clearMap('/nav_msgs/GridCellsEnd')
+    #     clearMap('/nav_msgs/GridCellsStart')
+    #     clearMap('/nav_msgs/GridCellsPath')
+    #     emptyPath = Path()
+    #     tempPublisher = rospy.Publisher('APlan', Path, queue_size = 1)
+    #     tempPublisher.publish(emptyPath)
 
     def UpdateMapOccupancy(self, evprent): #this should update all nodes and recompute path if needed
         if self._currmap != None and self.RobotPoseInit == True and self.UpdatePathOnce == True: #remove the only once boolean for D*, will wait until the robot's position is found
@@ -244,7 +244,7 @@ class GridSpacePathing:
                         self._waypointlist.append(currPoint)
                         if currPoint.calculateMDistance(robot) < closest.calculateMDistance(robot):
                             closest = currPoint
-                            print("")
+                            #print("")
 
             #publish the grid
             #update info
@@ -276,21 +276,21 @@ class GridSpacePathing:
                     if i - self._currmap.info.width >= 0 and self._currmap.data[i-self._currmap.info.width] != 100:
                         self._waypointlist[i].connectedNodes.append(self._waypointlist[i-self._currmap.info.width])
 
-            #for every item in the grid print out the grid to the console
-            for i in range(self._currmap.info.height*self._currmap.info.width):
-                #draw the robot as
-                if self._waypointlist[i] == closest:
-                    print "_",
-                elif (i+1) % self._currmap.info.width !=0:
-                    if len(self._waypointlist[i].connectedNodes) == 0:
-                        print " ",
-                    else:
-                        print len(self._waypointlist[i].connectedNodes),
-                else:
-                    if len(self._waypointlist[i].connectedNodes) == 0:
-                        print " "
-                    else:
-                        print len(self._waypointlist[i].connectedNodes)
+            # #for every item in the grid print out the grid to the console
+            # for i in range(self._currmap.info.height*self._currmap.info.width):
+            #     #draw the robot as
+            #     if self._waypointlist[i] == closest:
+            #         print "_",
+            #     elif (i+1) % self._currmap.info.width !=0:
+            #         if len(self._waypointlist[i].connectedNodes) == 0:
+            #             print " ",
+            #         else:
+            #             print len(self._waypointlist[i].connectedNodes),
+            #     else:
+            #         if len(self._waypointlist[i].connectedNodes) == 0:
+            #             print " "
+            #         else:
+            #             print len(self._waypointlist[i].connectedNodes)
 
 
     def timerCallback(self,evprent):

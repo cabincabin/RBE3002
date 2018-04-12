@@ -32,7 +32,7 @@ class GridSpacePathing:
         self._robot = WayPoint(-1000000, -1000000)
         self._goalWay = WayPoint(-1000000, -1000000)
         rospy.Timer(rospy.Duration(0.1), self.timerCallback)
-        self._robotSize = .5
+        self._robotSize = .1
         self._currmap = None
         self.RobotPoseInit = False
         self.UpdatePathOnce = True

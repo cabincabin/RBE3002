@@ -35,7 +35,7 @@ def drawGrid(topic,nodes,distance):
             p = Point()
             p.x = node.point.x
             p.y = node.point.y
-            p.z = 0
+            p.z = -.01
             pose = PoseStamped()
             pose.pose.position = node.point
             pathDisp.poses.append(pose)

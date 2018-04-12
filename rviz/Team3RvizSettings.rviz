@@ -7,10 +7,13 @@ Panels:
         - /TF1/Frames1
         - /TF1/Tree1
         - /Global Map1/Planner1
-        - /GridCells2
-        - /GridCells4/Status1
+        - /Start1
+        - /Occ1
         - /Path1
-        - /GridCells6
+        - /End1
+        - /End1/Status1
+        - /Front1
+        - /Closed1
       Splitter Ratio: 0.5
     Tree Height: 843
   - Class: rviz/Selection
@@ -495,36 +498,36 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz/GridCells
       Color: 25; 255; 0
-      Enabled: true
-      Name: GridCells
+      Enabled: false
+      Name: Start
       Topic: /nav_msgs/GridCellsStart
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz/GridCells
       Color: 25; 255; 0
       Enabled: true
-      Name: GridCells
+      Name: Occ
       Topic: /nav_msgs/GridCellsOcc
       Value: true
     - Alpha: 1
       Class: rviz/GridCells
       Color: 74; 14; 255
       Enabled: true
-      Name: GridCells
+      Name: Path
       Topic: /nav_msgs/GridCellsPath
       Value: true
     - Alpha: 1
       Class: rviz/GridCells
-      Color: 25; 255; 0
-      Enabled: true
-      Name: GridCells
+      Color: 255; 85; 255
+      Enabled: false
+      Name: End
       Topic: /nav_msgs/GridCellsEnd
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz/GridCells
       Color: 255; 0; 0
       Enabled: true
-      Name: GridCells
+      Name: Front
       Topic: /nav_msgs/GridCellsFrontier
       Value: true
     - Alpha: 1
@@ -553,10 +556,10 @@ Visualization Manager:
     - Alpha: 1
       Class: rviz/GridCells
       Color: 255; 255; 255
-      Enabled: true
-      Name: GridCells
+      Enabled: false
+      Name: Closed
       Topic: /nav_msgs/GridCellsChecked
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -590,7 +593,7 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 25.9929848
+      Scale: -75.0315399
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
       X: 0.565741062
@@ -612,5 +615,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1855
-  X: 65
+  X: 75
   Y: 24

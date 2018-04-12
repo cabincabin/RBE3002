@@ -32,13 +32,19 @@ class Robot:
         self._yaw = 0
         self._current = Pose()
 
+        self.interrupt = False
+
         # Timers and Subscribers
         rospy.Timer(rospy.Duration(.025), self.timerCallback)
         rospy.Subscriber('/Aplan', Path, self.navToPose, queue_size = 1)
+        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.toggleInterrupt, queue_size=1)
+
+    def toggleInterrupt(self, evprent):
+        self.interrupt = True
 
     def navToPose(self, goal):
         # Go to a specific location and assume orientation
-
+        self.interrupt = False
         # Receives a goal: Pose()
         # position: x, y, z
         # orientation: x, y, z, w
@@ -79,7 +85,7 @@ class Robot:
             # Keep driving to the point in small increments, adjusts if heading
             # is not correct, loops until threshold is reached
             thresh = 0.3
-            while(distance_to_dest > thresh):
+            while(distance_to_dest > thresh) and not self.interrupt:
                 x_dest = transGoal.pose.position.x
                 y_dest = transGoal.pose.position.y
 
@@ -128,7 +134,7 @@ class Robot:
 
         # Arrived at the point
         print('Arrived')
-
+        self.interrupt = False
 
     # Drive straight for a certain distance
     def driveStraight(self, speed, distance):
@@ -151,7 +157,7 @@ class Robot:
 
         # Incrementally approach the point until the destination has been reached
         thresh = 0.1
-        while distanceTo > thresh:
+        while distanceTo > thresh and not self.interrupt:
             distanceTo = math.sqrt( (-self._current.position.x + dest_x) ** 2
                 + (-self._current.position.y + dest_y) ** 2)
             # Print out the distance left to travel for debugging
@@ -192,7 +198,7 @@ class Robot:
         # print('Start: ' + str(driveStartTime))
 
         # Continually publish messages until destination is reached
-        while passedTime < (time) :
+        while passedTime < (time) and not self.interrupt:
             # Put in a wait here
             # Sleep for 1 second
             updatedTime = rospy.get_time()
@@ -241,7 +247,7 @@ class Robot:
 
             diff_angle = abs(dest_angle) - abs(self._yaw)
             # Continually rotate until angle is reached
-            while abs(diff_angle) > thresh:
+            while abs(diff_angle) > thresh and not self.interrupt:
                 diff_angle = abs(dest_angle) - abs(self._yaw)
                 print('This is the difference: ' + str(diff_angle))
                 self.spinWheels(0.2,-0.2, 0.1)
@@ -251,7 +257,7 @@ class Robot:
             # Angle is positive, turn counter-clockwise
             diff_angle = dest_angle - self._yaw
             # Continuously rotate until angle is reached
-            while abs(diff_angle) > thresh:
+            while abs(diff_angle) > thresh and not self.interrupt:
                 diff_angle = dest_angle - self._yaw
                 print('This is the difference: ' + str(diff_angle))
                 self.spinWheels(-0.2,0.2, 0.1)

@@ -32,7 +32,7 @@ class GridSpacePathing:
         self._robot = WayPoint(-1000000, -1000000)
         self._goalWay = WayPoint(-1000000, -1000000)
         rospy.Timer(rospy.Duration(0.1), self.timerCallback)
-        self._robotSize = .1
+        self._robotSize = .23
         self._currmap = None
         self.RobotPoseInit = False
         self.UpdatePathOnce = True
@@ -54,6 +54,8 @@ class GridSpacePathing:
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.PathToPos, queue_size=1)
 
     def PathToPos(self, goal):
+
+
         #self.clearAllGrids()
         #get the goal position from the robot transformation
         self._odom_list.waitForTransform('map', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))

@@ -162,10 +162,11 @@ class AStar:
 # Purpose: A node for a graph, called wayPoint to avoid confusion
 class WayPoint:
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, occ = 0):
         self.point = Point()
         self.point.x = x
         self.point.y = y
+        self._occ = occ
         # 100 for wall
         # 0 for empty
         # -1 for unknown

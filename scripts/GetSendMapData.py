@@ -251,7 +251,7 @@ class GridSpacePathing:
                         grid.cell_height = self._currmap.info.resolution*NumOfOcc
                         grid.cell_width = self._currmap.info.resolution*NumOfOcc
                         grid.header.frame_id = "map"
-                        currPoint = WayPoint(p.x, p.y)
+                        currPoint = WayPoint(p.x, p.y,100)
                         self._waypointlist.append(currPoint)
 
                     #for every empty space
@@ -284,35 +284,35 @@ class GridSpacePathing:
             #1 dimentional grid.
             for i in range(len(self._waypointlist)):
                 #if the point is not occupied
-                if(self._currmap.data[i] != 100):
+                if(self._waypointlist[i]._occ < 70):
                     #connect it to the waypoint to the left of it, if that point is not occupied
-                    if i % int(math.floor(self._currmap.info.width/NumOfOcc)) -1 >= 0 and self._currmap.data[i-1] != 100:
+                    if i % int(math.floor(self._currmap.info.width/NumOfOcc)) - 1 >= 0 and self._waypointlist[i-1]._occ < 70:
                         self._waypointlist[i].connectedNodes.append(self._waypointlist[i-1])
                         # connect it to the waypoint to the right of it, if that point is not occupied
-                    if i % int(math.floor(self._currmap.info.width/NumOfOcc)) + 1 < int(math.floor(self._currmap.info.width/NumOfOcc)) and self._currmap.data[i+1] != 100:
+                    if i % int(math.floor(self._currmap.info.width/NumOfOcc)) + 1 < int(math.floor(self._currmap.info.width/NumOfOcc)) and  self._waypointlist[i+1]._occ < 70:
                         self._waypointlist[i].connectedNodes.append(self._waypointlist[i+1])
                         # connect it to the waypoint below, if that point is not occupied
-                    if i + int(math.floor(self._currmap.info.width/NumOfOcc)) < int(math.floor(self._currmap.info.height/NumOfOcc))*int(math.floor(self._currmap.info.width/NumOfOcc)) and self._currmap.data[i+int(math.floor(self._currmap.info.width/NumOfOcc))] != 100:
+                    if i + int(math.floor(self._currmap.info.width/NumOfOcc)) < int(math.floor(self._currmap.info.height/NumOfOcc))*int(math.floor(self._currmap.info.width/NumOfOcc)) and self._waypointlist[i + int(math.floor(self._currmap.info.width/NumOfOcc))]._occ < 70:
                         self._waypointlist[i].connectedNodes.append(self._waypointlist[i+int(math.floor(self._currmap.info.width/NumOfOcc))])
                         # connect it to the waypoint above, if that point is not occupied
-                    if i - int(math.floor(self._currmap.info.width/NumOfOcc)) >= 0 and self._currmap.data[i-int(math.floor(self._currmap.info.width/NumOfOcc))] != 100:
+                    if i - int(math.floor(self._currmap.info.width/NumOfOcc)) >= 0 and self._waypointlist[i-int(math.floor(self._currmap.info.width/NumOfOcc))]._occ < 70:
                         self._waypointlist[i].connectedNodes.append(self._waypointlist[i-int(math.floor(self._currmap.info.width/NumOfOcc))])
 
-            # #for every item in the grid print out the grid to the console
-            # for i in range(self._currmap.info.height*self._currmap.info.width):
-            #     #draw the robot as
-            #     if self._waypointlist[i] == closest:
-            #         print "_",
-            #     elif (i+1) % self._currmap.info.width !=0:
-            #         if len(self._waypointlist[i].connectedNodes) == 0:
-            #             print " ",
-            #         else:
-            #             print len(self._waypointlist[i].connectedNodes),
-            #     else:
-            #         if len(self._waypointlist[i].connectedNodes) == 0:
-            #             print " "
-            #         else:
-            #             print len(self._waypointlist[i].connectedNodes)
+            #for every item in the grid print out the grid to the console
+            for i in range(len(self._waypointlist)):
+                #draw the robot as
+                if self._waypointlist[i] == closest:
+                    print "_",
+                elif (i+1) % int(math.floor(self._currmap.info.width/NumOfOcc))!= 0:
+                    if len(self._waypointlist[i].connectedNodes) == 0:
+                        print " ",
+                    else:
+                        print len(self._waypointlist[i].connectedNodes),
+                else:
+                    if len(self._waypointlist[i].connectedNodes) == 0:
+                        print " "
+                    else:
+                        print len(self._waypointlist[i].connectedNodes)
 
 
     def timerCallback(self,evprent):

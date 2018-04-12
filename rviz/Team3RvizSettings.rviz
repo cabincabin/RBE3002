@@ -7,12 +7,9 @@ Panels:
         - /TF1/Frames1
         - /TF1/Tree1
         - /Global Map1/Planner1
-        - /GridCells1
         - /GridCells2
-        - /GridCells3
-        - /GridCells4
         - /GridCells4/Status1
-        - /GridCells5
+        - /Path1
       Splitter Ratio: 0.5
     Tree Height: 772
   - Class: rviz/Selection
@@ -529,6 +526,29 @@ Visualization Manager:
       Name: GridCells
       Topic: /nav_msgs/GridCellsFrontier
       Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.0599999987
+      Head Length: 0.0399999991
+      Length: 0.300000012
+      Line Style: Lines
+      Line Width: 0.0299999993
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 0; 0; 0
+      Pose Style: Arrows
+      Radius: 0.0299999993
+      Shaft Diameter: 0.0199999996
+      Shaft Length: 0.0199999996
+      Topic: /Aplan
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -552,7 +572,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -6.72002983
+      Angle: -5.27002048
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
@@ -562,11 +582,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 58.866993
+      Scale: 48.774334
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz)
-      X: 0.325176299
-      Y: -0.0573021024
+      X: 0.933490992
+      Y: 0.833554924
     Saved: ~
 Window Geometry:
   Displays:
@@ -584,5 +604,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1855
-  X: 65
-  Y: 24
+  X: 385
+  Y: 372

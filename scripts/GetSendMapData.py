@@ -16,6 +16,8 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler
 import numpy as np
 from Draw import clearMap,drawGrid
 from std_msgs.msg import String
+
+#THIS IS A NODE. TREAT AS SUCH
 ##########################################################
 
 class GridSpacePathing:
@@ -30,7 +32,7 @@ class GridSpacePathing:
         self._robot = WayPoint(-1000000, -1000000)
         self._goalWay = WayPoint(-1000000, -1000000)
         rospy.Timer(rospy.Duration(0.1), self.timerCallback)
-
+        self._robotSize = .23
         self._currmap = None
         self.RobotPoseInit = False
         self.UpdatePathOnce = True
@@ -54,7 +56,7 @@ class GridSpacePathing:
     def PathToPos(self, goal):
         #self.clearAllGrids()
         #get the goal position from the robot transformation
-        self._odom_list.waitForTransform('/odom', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))
+        self._odom_list.waitForTransform('map', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))
         rospy.sleep(1.0)
         transGoal = self._odom_list.transformPose('map', goal)  # transform the nav goal from the global coordinate system to the robot's coordinate system
         closest = self._waypointlist[0]
@@ -62,9 +64,9 @@ class GridSpacePathing:
         #create a goal waypoint
         self._goalWay = WayPoint(transGoal.pose.position.x, transGoal.pose.position.y)
 
-        #finds nearest waypoint in the actual grid toneighbor to this point,
+        #finds nearest waypoint in the actual grid to neighbor to this point,
         #should probably be a new method
-        for i in range(self._currmap.info.height * self._currmap.info.width):
+        for i in range(len(self._waypointlist)):
             if self._currmap.data[i] != 100 and self._waypointlist[i].calculateMDistance(self._goalWay) < closest.calculateMDistance(self._goalWay):
                 closest = self._waypointlist[i]
                 print("")
@@ -92,7 +94,7 @@ class GridSpacePathing:
         #             print len(self._waypointlist[i].connectedNodes)
 
         #get the path
-        star = AStar(self._robot, self._goalWay, self._currmap.info.resolution)
+        star = AStar(self._robot, self._goalWay, self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution)))
         path = star.findPath()
 
         # Drawing the path cells
@@ -117,8 +119,8 @@ class GridSpacePathing:
             if node.isSame(self._robot):
                 reached = True
 
-        grid.cell_height = self._currmap.info.resolution
-        grid.cell_width = self._currmap.info.resolution
+        grid.cell_height = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
+        grid.cell_width = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
         grid.header.frame_id = "map"
         pathDisp.header.frame_id = "map"
 
@@ -155,6 +157,7 @@ class GridSpacePathing:
         #pathDisp2.header.frame_id = "map"
 
         #show the path
+        pathDisp.poses[0].pose.orientation = pathDisp.poses[1].pose.orientation
         self._ShowPathGrid.publish(grid)
         self._ShowPathPath.publish(pathDisp)
 
@@ -172,8 +175,8 @@ class GridSpacePathing:
         gridStart.cells.append(p)
         prevNode = node
 
-        gridStart.cell_height = self._currmap.info.resolution
-        gridStart.cell_width = self._currmap.info.resolution
+        gridStart.cell_height = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
+        gridStart.cell_width = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
         gridStart.header.frame_id = "map"
         self._ShowStart.publish(gridStart)
 
@@ -187,8 +190,8 @@ class GridSpacePathing:
         p.z = 0
         gridEnd.cells.append(p)
 
-        gridEnd.cell_height = self._currmap.info.resolution
-        gridEnd.cell_width = self._currmap.info.resolution
+        gridEnd.cell_height = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
+        gridEnd.cell_width = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
         gridEnd.header.frame_id = "map"
 
         self._ShowEnd.publish(gridEnd)
@@ -197,6 +200,7 @@ class GridSpacePathing:
         #when the map changes, update the occupancy grid.
         print("here")
         print(currmap.data[0])
+        #if currmap.header.seq == 0:
         self._currmap = currmap
 
     # def clearAllGrids(self):
@@ -210,6 +214,7 @@ class GridSpacePathing:
     def UpdateMapOccupancy(self, evprent): #this should update all nodes and recompute path if needed
         if self._currmap != None and self.RobotPoseInit == True and self.UpdatePathOnce == True: #remove the only once boolean for D*, will wait until the robot's position is found
             rospy.Rate(1).sleep()
+
             grid = GridCells()
 
             #this is used for nearest neighbor method for finding the robot
@@ -217,28 +222,43 @@ class GridSpacePathing:
             print(self._current.position.x, self._current.position.y)
             robot = WayPoint(self._current.position.x, self._current.position.y)
 
+            NumOfOcc = int(math.ceil(self._robotSize/self._currmap.info.resolution))
+            i = 0
+            print(NumOfOcc)
+
             #for each item on the 2 dimentional array
-            for r in range(self._currmap.info.height):
-                for c in range(self._currmap.info.width):
+            for r in range(int(math.floor(self._currmap.info.height/NumOfOcc))):
+                for c in range(int(math.floor(self._currmap.info.width/NumOfOcc))):
+                    IsOcc = False
+
+                    #checks c space to find if the location is occupied and calculates where the waypoint is in 2d space
+                    for j in range(r*NumOfOcc, (r*NumOfOcc+NumOfOcc+1), 1):
+                        for k in range(c*NumOfOcc, (c*NumOfOcc+NumOfOcc+1), 1):
+                            if j < self._currmap.info.height and k < self._currmap.info.width and self._currmap.data[j*self._currmap.info.width + k] >= 75:
+                                IsOcc = True
+
+
+
                     #if occupied, add this to the gridcells to draw the occupancy grid
-                    if self._currmap.data[self._currmap.info.width*r+c] == 100:
-                        p = Point()
+                    if (IsOcc == True):
                         #the position of the gridcell is the offset of the occupancy to the world + the size of the cells*num of cells to point, + half the size of a cell
                         #due to the way that the gridCells is drawn
-                        p.x = self._currmap.info.origin.position.x + c*self._currmap.info.resolution + self._currmap.info.resolution/2
-                        p.y = self._currmap.info.origin.position.y + r*self._currmap.info.resolution + self._currmap.info.resolution/2
+                        p = Point()
+                        p.x = self._currmap.info.origin.position.x + c*NumOfOcc*self._currmap.info.resolution + self._currmap.info.resolution*NumOfOcc/2
+                        p.y = self._currmap.info.origin.position.y + r*NumOfOcc*self._currmap.info.resolution + self._currmap.info.resolution*NumOfOcc/2
                         p.z = 0
                         grid.cells.append(p)
-                        grid.cell_height = self._currmap.info.resolution
-                        grid.cell_width = self._currmap.info.resolution
+                        grid.cell_height = self._currmap.info.resolution*NumOfOcc
+                        grid.cell_width = self._currmap.info.resolution*NumOfOcc
                         grid.header.frame_id = "map"
                         currPoint = WayPoint(p.x, p.y)
                         self._waypointlist.append(currPoint)
+
                     #for every empty space
                     else:
                         p = Point()
-                        p.x = self._currmap.info.origin.position.x + c*self._currmap.info.resolution + self._currmap.info.resolution/2
-                        p.y = self._currmap.info.origin.position.y + r*self._currmap.info.resolution + self._currmap.info.resolution/2
+                        p.x = self._currmap.info.origin.position.x + c*NumOfOcc*self._currmap.info.resolution + self._currmap.info.resolution*NumOfOcc/2
+                        p.y = self._currmap.info.origin.position.y + r*NumOfOcc*self._currmap.info.resolution + self._currmap.info.resolution*NumOfOcc/2
                         p.z = 0
                         # add the waypoint to the grid and see if it should be the robot's position via nearest neighbor
                         currPoint = WayPoint(p.x, p.y)
@@ -246,6 +266,7 @@ class GridSpacePathing:
                         if currPoint.calculateMDistance(robot) < closest.calculateMDistance(robot):
                             closest = currPoint
                             #print("")
+            print(i)
 
             #publish the grid
             #update info
@@ -257,25 +278,25 @@ class GridSpacePathing:
 
             print("............")
             print(self._currmap.info.height*self._currmap.info.width)
-            print(len(self._waypointlist))
+            print(len(self._waypointlist*NumOfOcc*NumOfOcc))
 
             #use black magic to connect every point in the 2d grid to every adjacent point that is not occupied, from a
             #1 dimentional grid.
-            for i in range(self._currmap.info.height*self._currmap.info.width):
+            for i in range(len(self._waypointlist)):
                 #if the point is not occupied
                 if(self._currmap.data[i] != 100):
                     #connect it to the waypoint to the left of it, if that point is not occupied
-                    if i % self._currmap.info.width -1 >= 0 and self._currmap.data[i-1] != 100:
+                    if i % int(math.floor(self._currmap.info.width/NumOfOcc)) -1 >= 0 and self._currmap.data[i-1] != 100:
                         self._waypointlist[i].connectedNodes.append(self._waypointlist[i-1])
                         # connect it to the waypoint to the right of it, if that point is not occupied
-                    if i % self._currmap.info.width + 1 < self._currmap.info.width and self._currmap.data[i+1] != 100:
+                    if i % int(math.floor(self._currmap.info.width/NumOfOcc)) + 1 < int(math.floor(self._currmap.info.width/NumOfOcc)) and self._currmap.data[i+1] != 100:
                         self._waypointlist[i].connectedNodes.append(self._waypointlist[i+1])
                         # connect it to the waypoint below, if that point is not occupied
-                    if i + self._currmap.info.width < self._currmap.info.height*self._currmap.info.width and self._currmap.data[i+self._currmap.info.width] != 100:
-                        self._waypointlist[i].connectedNodes.append(self._waypointlist[i+self._currmap.info.width])
+                    if i + int(math.floor(self._currmap.info.width/NumOfOcc)) < int(math.floor(self._currmap.info.height/NumOfOcc))*int(math.floor(self._currmap.info.width/NumOfOcc)) and self._currmap.data[i+int(math.floor(self._currmap.info.width/NumOfOcc))] != 100:
+                        self._waypointlist[i].connectedNodes.append(self._waypointlist[i+int(math.floor(self._currmap.info.width/NumOfOcc))])
                         # connect it to the waypoint above, if that point is not occupied
-                    if i - self._currmap.info.width >= 0 and self._currmap.data[i-self._currmap.info.width] != 100:
-                        self._waypointlist[i].connectedNodes.append(self._waypointlist[i-self._currmap.info.width])
+                    if i - int(math.floor(self._currmap.info.width/NumOfOcc)) >= 0 and self._currmap.data[i-int(math.floor(self._currmap.info.width/NumOfOcc))] != 100:
+                        self._waypointlist[i].connectedNodes.append(self._waypointlist[i-int(math.floor(self._currmap.info.width/NumOfOcc))])
 
             # #for every item in the grid print out the grid to the console
             # for i in range(self._currmap.info.height*self._currmap.info.width):
@@ -298,8 +319,8 @@ class GridSpacePathing:
         # Called back rapidly to update odometry
 
         # Convert to global coordinates
-        self._odom_list.waitForTransform('/odom', '/base_footprint', rospy.Time(0), rospy.Duration(1.0))
-        (position, orientation) = self._odom_list.lookupTransform('/odom', '/base_footprint', rospy.Time(0))
+        self._odom_list.waitForTransform('map', '/base_footprint', rospy.Time(0), rospy.Duration(1.0))
+        (position, orientation) = self._odom_list.lookupTransform('map', '/base_footprint', rospy.Time(0))
 
         # Update the data
     	self._current.position.x = position[0]

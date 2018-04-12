@@ -2,8 +2,8 @@
 
 # File: lab2.py
 # Author: Floris van Rossum
+# Author: Clayton Dembski
 # Class: RBE3002
-# Project: Lab 2
 # Professor: Professor Pinciroli
 
 
@@ -11,6 +11,7 @@
 import rospy, tf, copy, math, roslib
 
 from geometry_msgs.msg import Twist, Pose, PoseStamped
+from nav_msgs.msg import Path
 from tf.transformations import euler_from_quaternion
 import numpy as np
 from std_msgs.msg import String
@@ -32,115 +33,102 @@ class Robot:
         self._current = Pose()
 
         # Timers and Subscribers
-        rospy.Timer(rospy.Duration(0.1), self.timerCallback)
-        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.navToPose, queue_size = 1)
+        rospy.Timer(rospy.Duration(.025), self.timerCallback)
+        rospy.Subscriber('/Aplan', Path, self.navToPose, queue_size = 1)
 
-    def navToPose(self,goal):
+    def navToPose(self, goal):
         # Go to a specific location and assume orientation
 
         # Receives a goal: Pose()
         # position: x, y, z
         # orientation: x, y, z, w
-
+        print("here1")
         # Convert goal to robot coordinates
-        self._odom_list.waitForTransform('/odom', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))
-        rospy.sleep(1.0)
-        transGoal = self._odom_list.transformPose('/odom', goal) # transform the nav goal from the global coordinate system to the robot's coordinate system
+        for pathIndex in range(len(goal.poses)):
+            self._odom_list.waitForTransform('/odom', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))
+            rospy.sleep(1.0)
+            transGoal = goal.poses[pathIndex] # transform the nav goal from the global coordinate system to the robot's coordinate system
 
-        # Destination data
-        x_dest = transGoal.pose.position.x
-        y_dest = transGoal.pose.position.y
-        angle_dest = transGoal.pose.orientation.z
-
-        # Current data
-        x_current = self._current.position.x
-        y_current = self._current.position.y
-        yaw_current = self._yaw
-
-        # Calculate the angle to turn to in order to drive to point
-        temp_angle = math.atan2((y_dest - y_current),(x_dest - x_current))
-
-        if(temp_angle < 0):
-            temp_angle = temp_angle + (2*math.pi)
-        angle_to_dest = temp_angle - yaw_current
-
-        print('Angle to Travel: ' + str(angle_to_dest))
-
-        # Calculate the distance to drive
-        distance_to_dest = math.sqrt((x_dest - x_current) ** 2 + (y_dest - y_current) ** 2)
-
-        yaw_current = self._yaw
-
-        # Rotate to face the point
-        self.rotate(angle_to_dest)
-
-        # Keep driving to the point in small increments, adjusts if heading
-        # is not correct, loops until threshold is reached
-        thresh = 0.2
-        while(distance_to_dest > thresh):
+            # Destination data
             x_dest = transGoal.pose.position.x
             y_dest = transGoal.pose.position.y
+            angle_dest = transGoal.pose.orientation.z
 
+            # Current data
             x_current = self._current.position.x
             y_current = self._current.position.y
             yaw_current = self._yaw
 
-            angle_dest = transGoal.pose.orientation.z
-
-            temp_angle = math.atan2((y_dest - y_current) ,(x_dest - x_current))
+            # Calculate the angle to turn to in order to drive to point
+            temp_angle = math.atan2((y_dest - y_current),(x_dest - x_current))
 
             if(temp_angle < 0):
                 temp_angle = temp_angle + (2*math.pi)
             angle_to_dest = temp_angle - yaw_current
 
+            print('Angle to Travel: ' + str(angle_to_dest))
+
+            # Calculate the distance to drive
             distance_to_dest = math.sqrt((x_dest - x_current) ** 2 + (y_dest - y_current) ** 2)
-
-            print('rotating to destination')
-
-            self.rotate(angle_to_dest)
-
-            print('going to destination')
-            self.driveStraight(0.3, distance_to_dest/2.0)
 
             yaw_current = self._yaw
 
-            rospy.sleep(0.1)
+            # Rotate to face the point
+            self.rotate(angle_to_dest)
 
-        # Final rotation to face the final orientation
-        print('Final rotation')
+            # Keep driving to the point in small increments, adjusts if heading
+            # is not correct, loops until threshold is reached
+            thresh = 0.3
+            while(distance_to_dest > thresh):
+                x_dest = transGoal.pose.position.x
+                y_dest = transGoal.pose.position.y
 
-    	q = [transGoal.pose.orientation.x,
-                 transGoal.pose.orientation.y,
-                 transGoal.pose.orientation.z,
-                 transGoal.pose.orientation.w]
+                x_current = self._current.position.x
+                y_current = self._current.position.y
+                yaw_current = self._yaw
 
-    	# convert the quaternion to roll pitch yaw
-        (roll, pitch, yawFinal) = euler_from_quaternion(q)
+                angle_dest = transGoal.pose.orientation.z
 
-        angle_dest = yawFinal
+                temp_angle = math.atan2((y_dest - y_current) ,(x_dest - x_current))
 
-        final_to_angle = angle_dest - yaw_current
+                if(temp_angle < 0):
+                    temp_angle = temp_angle + (2*math.pi)
+                angle_to_dest = temp_angle - yaw_current
 
-        self.rotate(final_to_angle)
+                distance_to_dest = math.sqrt((x_dest - x_current) ** 2 + (y_dest - y_current) ** 2)
+
+                print('rotating to destination')
+
+                self.rotate(angle_to_dest)
+
+                print('going to destination')
+                self.driveStraight(0.3, distance_to_dest/2.0)
+
+                yaw_current = self._yaw
+
+                rospy.sleep(0.1)
+
+            # Final rotation to face the final orientation
+            if pathIndex == len(goal.poses) -1:
+                print('Final rotation')
+
+                q = [transGoal.pose.orientation.x,
+                         transGoal.pose.orientation.y,
+                         transGoal.pose.orientation.z,
+                         transGoal.pose.orientation.w]
+
+                # convert the quaternion to roll pitch yaw
+                (roll, pitch, yawFinal) = euler_from_quaternion(q)
+
+                angle_dest = yawFinal
+
+                final_to_angle = angle_dest - yaw_current
+
+                self.rotate(final_to_angle)
 
         # Arrived at the point
         print('Arrived')
 
-    def executeTrajectory(self):
-        # Execute a dance
-        # Go Forward 60
-        # Turn right 90
-        # Go Forward 45
-        # Turn Left 135
-        # Wait statements in between
-
-        self.driveStraight(0.1, 0.6)
-        rospy.sleep(1.)
-        self.rotate(-(math.pi)/2)
-        rospy.sleep(1.)
-        self.driveStraight(0.1,0.45)
-        rospy.sleep(1.)
-        self.rotate( (3*(math.pi))/4 )
 
     # Drive straight for a certain distance
     def driveStraight(self, speed, distance):
@@ -236,7 +224,7 @@ class Robot:
         diff_angle = dest_angle - self._yaw
         print('This is the difference: ' + str(diff_angle))
 
-        thresh = 0.1
+        thresh = 0.2
 
         # Find out which way to turn
         if(angle < 0):
@@ -317,9 +305,8 @@ if __name__ == '__main__':
 
     #test function calls here
     rospy.Rate(10).sleep()
-    turtle.rotate(3.14159 / 4)
-    while not rospy.is_shutdown():
 
+    while not rospy.is_shutdown():
 
         # Prints for debugging
         print('X: ' + str(turtle._current.position.x))

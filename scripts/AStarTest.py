@@ -23,12 +23,11 @@ from std_msgs.msg import String
 # f(n) = g(n) + h(n)
 
 class AStar:
-    def __init__(self, startNode, endNode, distance):
+    def __init__(self, startNode, endNode):
         self.startNode = startNode # The starting waypoint
         self.endNode = endNode # The ending waypoint
-        self._distance = distance
         self.euclidianHeuristic = True
-
+        self._distance = abs(self.startNode.point.x - self.startNode.connectedNodes[0].point.x)
     # Find the best path with a star
     def findPath(self):
         evaluated = [] # Contains all the nodes that have been evaluated

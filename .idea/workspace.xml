@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="858f2ee2-3bc5-422b-86a9-cd80ff326cfe" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/launch/3002Setup.launch" afterPath="$PROJECT_DIR$/launch/3002Setup.launch" />
       <change beforePath="$PROJECT_DIR$/scripts/AStarTest.py" afterPath="$PROJECT_DIR$/scripts/AStarTest.py" />
-      <change beforePath="$PROJECT_DIR$/scripts/Draw.py" afterPath="$PROJECT_DIR$/scripts/Draw.py" />
       <change beforePath="$PROJECT_DIR$/scripts/DriveAlongPath.py" afterPath="$PROJECT_DIR$/scripts/DriveAlongPath.py" />
       <change beforePath="$PROJECT_DIR$/scripts/GetSendMapData.py" afterPath="$PROJECT_DIR$/scripts/GetSendMapData.py" />
     </list>

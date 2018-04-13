@@ -104,7 +104,7 @@ class GridSpacePathing:
         #             print len(self._waypointlist[i].connectedNodes)
 
         #get the path
-        star = AStar(self._robot, self._goalWay, self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution)))
+        star = AStar(self._robot, self._goalWay)
         path = star.findPath()
 
         # Drawing the path cells
@@ -143,7 +143,6 @@ class GridSpacePathing:
 
         pathDisp.poses.reverse()
         pathDisp.poses.append(goal)
-
 
 
 

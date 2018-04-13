@@ -270,6 +270,8 @@ class GridSpacePathing:
         self._showOccupied.publish(self._OccGrids)
         print("here6")
         if CheckUpdatePath and self.IsPath:
+            tempPublisher = rospy.Publisher('/AReset', Twist, None, queue_size=1)
+            tempPublisher.publish(Twist())
             try:
                 for wayp in range(len(self._currPath)):
                     if self._currPath[wayp]._occ >= 70:

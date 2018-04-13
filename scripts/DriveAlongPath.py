@@ -37,7 +37,7 @@ class Robot:
         # Timers and Subscribers
         rospy.Timer(rospy.Duration(.025), self.timerCallback)
         rospy.Subscriber('/Aplan', Path, self.navToPose, queue_size = 1)
-        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.toggleInterrupt, queue_size=1)
+        rospy.Subscriber('/AReset', Twist, self.toggleInterrupt, queue_size=1)
 
     def toggleInterrupt(self, evprent):
         self.interrupt = True

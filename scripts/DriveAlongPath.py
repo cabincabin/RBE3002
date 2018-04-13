@@ -41,6 +41,7 @@ class Robot:
 
     def toggleInterrupt(self, evprent):
         self.interrupt = True
+        print("interrupted")
 
     def navToPose(self, goal):
         # Go to a specific location and assume orientation

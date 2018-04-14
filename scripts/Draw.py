@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # File: Draw.py
-# Author: Clayton Dembski, Floris VanRossum
+# Author: Floris VanRossum
 # Class: RBE3002
 # Project: Lab 4
 # Professor: Professor Pinciroli
@@ -47,8 +47,3 @@ def drawGrid(topic,nodes,distance):
 
         tempPublisher = rospy.Publisher(topic, GridCells, None, queue_size=1)
         tempPublisher.publish(grid)
-
-def clearMap(topic):
-    emptyGrid = GridCells()
-    tempPublisher = rospy.Publisher(topic, GridCells, None, queue_size=1)
-    tempPublisher.publish(emptyGrid)

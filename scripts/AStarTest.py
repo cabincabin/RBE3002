@@ -26,14 +26,16 @@ class AStar:
     def __init__(self, startNode, endNode):
         self.startNode = startNode # The starting waypoint
         self.endNode = endNode # The ending waypoint
-        self.euclidianHeuristic = True
+        self.euclidianHeuristic = True # Toggle heuristic mode
+        # Distance between two waypoints
         self._distance = abs(self.startNode.point.x - self.startNode.connectedNodes[0].point.x)
-    # Find the best path with a star
+
+    # Purpose: Find the best path with a star
     def findPath(self):
         evaluated = [] # Contains all the nodes that have been evaluated
         notEvaluated = Q.PriorityQueue() # PriorityQueue of nodes based on fCost
         notEvaluated.put((self.startNode.fCost, self.startNode)) # Insert start node
-        notEvaluatedCheck = []
+        notEvaluatedCheck = [] # Contains all the nodes currently in the priority queue
         notEvaluatedCheck.append(self.startNode)
 
         previousSteps = {} # Dictionary of the previous nodes chosen
@@ -52,12 +54,13 @@ class AStar:
         # AStar Loop
         while not notEvaluated.empty() and not pathFound:
             current = notEvaluated.get()[1] # Pull the best node from the queue based on its fCost
-            notEvaluatedCheck.remove(current)
+            notEvaluatedCheck.remove(current) # Pull from the checking array
 
             # Print statement for debugging
             #print("Node pulled: X: " + str(current.point.x) + " Y: " + str(current.point.y) + " FCost: " + str(current.fCost))
 
             # Check if the current node pulled is our goal
+            # Use the checking array and not the priority queue
             if current.isSame(self.endNode):
                 # We have reached the end node, exit the loop and return path
                 print("--------------A Star Loop Ended-------------")
@@ -120,6 +123,7 @@ class AStar:
 
     # Calculate the heuristics cost with a certain waypoint
     def heuristicCost(self, wayPoint):
+        # Depending on boolean defined above change heuristic expression used
         if self.euclidianHeuristic:
             return math.sqrt((self.endNode.point.x - wayPoint.point.x) ** 2 + (self.endNode.point.y - wayPoint.point.y) ** 2)
         else:
@@ -131,11 +135,9 @@ class AStar:
         if array.__contains__(wayPoint):
             drawGrid('nav_msgs/GridCellsFrontier', array, self._distance)
             return True
-            print("Return true")
         else:
             drawGrid('nav_msgs/GridCellsFrontier', array, self._distance)
             return False
-            print("Return False")
 
 # Waypoint (node) class
 # Purpose: A node for a graph, called wayPoint to avoid confusion

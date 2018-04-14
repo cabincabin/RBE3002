@@ -16,19 +16,16 @@ import numpy as np
 from std_msgs.msg import String
 ##########################################################
 
+# Purpose: Draw a certain list of nodes on the gridmap on rviz
+# topic: The topic to publish the grid to
+# nodes: An array of nodes (waypoints) that need to be visualized
+# distance: this distance between two nodes
 def drawGrid(topic,nodes,distance):
-    #clearMap(topic)
-    if len(nodes) > 2:
+
+        # Instantiate a new grid
         grid = GridCells()
-        pathDisp = Path()
 
-        # put the path into GridCells
-
-        distance_X = abs(nodes[0].point.x - nodes[1].point.x)
-        distance_Y = abs(nodes[0].point.y - nodes[1].point.y)
-
-        dist = math.sqrt((distance_X ** 2) + (distance_Y ** 2))
-
+        # put the nodes into the grid
         for i in range(0, len(nodes)):
             node = nodes[i]
             p = Point()
@@ -37,13 +34,13 @@ def drawGrid(topic,nodes,distance):
             p.z = -.01
             pose = PoseStamped()
             pose.pose.position = node.point
-            pathDisp.poses.append(pose)
             grid.cells.append(p)
 
+        # Set grid cell constants
         grid.cell_height = distance
         grid.cell_width = distance
-
         grid.header.frame_id = "map"
 
+        # Create a new publisher and publish the grid
         tempPublisher = rospy.Publisher(topic, GridCells, None, queue_size=1)
         tempPublisher.publish(grid)

@@ -440,6 +440,39 @@ class GridSpacePathing:
         self.RobotPoseInit = True
 
 
+    def Genfrontier(self, frontiers, waypointMap):
+        for wayp in waypointMap:
+            front = False
+            occ = False
+            for neighbor in wayp.connectedNodes:
+                if neighbor._occ >= 70:
+                    occ = True
+                if neighbor._occ == -1:
+                    front = True
+            if occ == False and front == True:
+                alreadyFront = False
+                for LOWP in frontiers:
+                    if wayp in LOWP:
+                        alreadyFront = True
+                if alreadyFront == False:
+                    newFront = []
+                    self.CreateFrontier(wayp, newFront)
+                    frontiers.append()
+
+    def CreateFrontier(self, wayp, newFront):
+        newFront.append(wayp)
+        for neighbor in wayp.connectedNodes:
+            if neighbor not in newFront:
+                front = False
+                occ = False
+                for neighborValid in neighbor.connectedNodes:
+                    if neighborValid._occ >= 70:
+                        occ = True
+                    if neighborValid._occ == -1:
+                        front = True
+                if occ == False and front == True:
+                    self.CreateFrontier(neighbor, newFront)
+
 if __name__ == '__main__':
 
     rospy.init_node('AStarPathing')

@@ -228,7 +228,7 @@ class GridSpacePathing:
         # finds nearest waypoint in the actual grid to neighbor to this point,
         # could probably be done with Astar
         for i in range(len(self._waypointlist)):
-            if self._currmap.data[i] != 100 and self._waypointlist[i].calculateMDistance(
+            if self._currmap.data[i] < 70 and self._waypointlist[i].calculateMDistance(
                     waypoint) < closest.calculateMDistance(waypoint):
                 closest = self._waypointlist[i]
 
@@ -438,6 +438,59 @@ class GridSpacePathing:
         # Update yaw var
         self._yaw = yaw
         self.RobotPoseInit = True
+
+    # Find the centroid of a frontier and then find the waypoint closest to the centroid and return it
+    def findFrontierCenter(self, frontier):
+        totalX = 0
+        totalY = 0
+        frontierLen = len(frontier)
+
+        for node in frontier:
+            totalX = totalX + node.point.x
+            totalY = totalY + node.point.y
+
+        avgX = totalX / frontierLen
+        avgY = totalY / frontierLen
+
+        tempWayPoint = WayPoint(avgX, avgY, 0)
+
+        closest = self._waypointlist[0]
+        # finds nearest waypoint in the actual grid to neighbor to this point
+        for i in range(len(self._waypointlist)):
+            if self._currmap.data[i] < 70 and self._waypointlist[i].calculateMDistance(
+                    tempWayPoint) < closest.calculateMDistance(tempWayPoint):
+                closest = self._waypointlist[i]
+
+        return closest
+
+    # Return the priority value of a certain frontier based on heuristics 
+    def findPriority(self, frontier):
+        distanceTune = 0.5
+        lengthTune = 0.5
+
+        centerFrontierValue = self.findFrontierCenter(frontier)
+
+        # Calculate the distance between the robot and the frontier value
+        distanceToFrontier = centerFrontierValue.calculateMDDistance(self._robot)
+        lengthOfFrontier = len(frontier)
+
+        return ((distanceTune * distanceToFrontier) + (lengthTune*lengthOfFrontier))
+
+    # Purpose: Return a waypoint of the best frontier in the frontier list
+    # Input: List of all current frontiers
+    # Output: Waypoint representing the centroid of the best frontier
+    def findBestFrontier(self, frontierList):
+
+        bestPriority = 0
+        bestFrontier = frontierList[0]
+
+        for frontier in frontierList:
+            currentPriority = self.findPriority(frontier)
+            if bestPriority < currentPriority:
+                bestFrontier = frontier
+                bestPriority = self.findPriority(frontier)
+
+        return self.findFrontierCenter(bestFrontier)
 
 
     def Genfrontier(self, frontiers, waypointMap):

@@ -272,6 +272,7 @@ class GridSpacePathing:
                             OccWay.connectedNodes[wayp].connectedNodes.remove(OccWay)
                         OccWay.connectedNodes = []
                         CheckUpdatePath = True
+
         #show the occupied grids
         self._showOccupied.publish(self._OccGrids)
         print("here6")
@@ -349,7 +350,7 @@ class GridSpacePathing:
                         p.z = 0
                         # add the waypoint to the grid and see if it should be the robot's position via nearest neighbor
                         currPoint = WayPoint(p.x, p.y)
-                        self._waypointlist.append(currPoint)
+                        self._waypointlist.append(currPoint,-1)
                         if currPoint.calculateMDistance(robot) < closest.calculateMDistance(robot):
                             closest = currPoint
                             #print("")

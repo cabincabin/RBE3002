@@ -45,7 +45,7 @@ class GridSpacePathing:
 
         #subscribe to the map's occupancy grid.
         #set up the visualization for the grid and path
-        rospy.Subscriber('/map', OccupancyGrid, self.getMapInfo, queue_size=10)
+        rospy.Subscriber('/map', OccupancyGrid, self.getMapInfo, queue_size=1)
         self._showOccupied = rospy.Publisher('/nav_msgs/GridCellsOcc', GridCells, None, queue_size=1)
         self._ShowStart = rospy.Publisher('/nav_msgs/GridCellsStart', GridCells, None, queue_size=1)
         self._ShowEnd = rospy.Publisher('/nav_msgs/GridCellsEnd', GridCells, None, queue_size=1)
@@ -56,7 +56,7 @@ class GridSpacePathing:
 
         # Timers and Subscribers
         #when a nav goal is published, pathfind to this position.
-        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.PathToPos, queue_size=1)
+        #rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.PathToPos, queue_size=1)
 
     def PathToPos(self, goal):
         self._CurrGoal = goal
@@ -216,7 +216,9 @@ class GridSpacePathing:
         self._allMaps.append(currmap)
         self._currmap = currmap
 
+        print("here2")
         if len(self._allMaps)>3:
+            print("here3")
             self.UpdateMapOccupancy()
 
     def FindNNInWayPoints(self, waypoint):
@@ -229,44 +231,36 @@ class GridSpacePathing:
             if self._currmap.data[i] != 100 and self._waypointlist[i].calculateMDistance(
                     waypoint) < closest.calculateMDistance(waypoint):
                 closest = self._waypointlist[i]
-
         return closest
 
     def UpdateMapOccupancy(self):
         print("here5")
         CheckUpdatePath = False
-        for r in range(self._allMaps[-1].info.height):
-            for c in range(self._allMaps[-1].info.width):
-                if(self._allMaps[-1].data[r*self._allMaps[-1].info.width + c]>=70):
-                    x = self._allMaps[-1].info.origin.position.x + c * self._allMaps[-1].info.resolution + self._allMaps[-1].info.resolution/2
-                    y = self._allMaps[-1].info.origin.position.y + r * self._allMaps[-1].info.resolution + self._allMaps[-1].info.resolution/2
-                    waypoint = WayPoint(x,y)
-
-                    closest = self._waypointlist[0]
-                    # create a goal waypoint
-                    # finds nearest waypoint in the actual grid to neighbor to this point,
-                    # should probably be a new method
-                    for i in range(len(self._waypointlist)):
-                        if self._waypointlist[i].calculateMDistance(
-                                waypoint) < closest.calculateMDistance(waypoint):
-                            closest = self._waypointlist[i]
+        for wayp in self._waypointlist:
+                if(wayp<70):
+                    isNowOcc = False
+                    OccVal = 0
+                    for ind in wayp.spaces:
+                        if self._allMaps[-1].data[ind] >= 70:
+                            isNowOcc=True
+                            OccVal = self._allMaps[-1].data[ind]
 
 
-                    OccWay = closest
-                    if OccWay._occ < 70:
+                    if isNowOcc == True:
 
                         p = Point()
-                        p.x = OccWay.point.x
-                        p.y = OccWay.point.y
+                        p.x = wayp.point.x
+                        p.y = wayp.point.y
                         p.z = 0.1
 
                         self._OccGrids.cells.append(p)
 
-                        OccWay._occ = self._allMaps[-1].data[r*self._allMaps[-1].info.width + c]
-                        for wayp in range(len(OccWay.connectedNodes)):
-                            OccWay.connectedNodes[wayp].connectedNodes.remove(OccWay)
-                        OccWay.connectedNodes = []
+                        wayp._occ = OccVal
+                        for neighbor in range(len(wayp.connectedNodes)):
+                            wayp.connectedNodes[neighbor].connectedNodes.remove(wayp)
+                        wayp.connectedNodes = []
                         CheckUpdatePath = True
+
         self._showOccupied.publish(self._OccGrids)
         print("here6")
         if CheckUpdatePath and self.IsPath:
@@ -308,12 +302,14 @@ class GridSpacePathing:
             for r in range(int(math.floor(self._currmap.info.height/NumOfOcc))):
                 for c in range(int(math.floor(self._currmap.info.width/NumOfOcc))):
                     IsOcc = False
-
+                    spaces = []
                     #checks c space to find if the location is occupied and calculates where the waypoint is in 2d space
                     for j in range(r*NumOfOcc, (r*NumOfOcc+NumOfOcc+1), 1):
                         for k in range(c*NumOfOcc, (c*NumOfOcc+NumOfOcc+1), 1):
-                            if j < self._currmap.info.height and k < self._currmap.info.width and self._currmap.data[j*self._currmap.info.width + k] >= 70:
-                                IsOcc = True
+                            if j < self._currmap.info.height and k < self._currmap.info.width:
+                                spaces.append(j*self._currmap.info.width + k)
+                                if self._currmap.data[j*self._currmap.info.width + k] >= 70:
+                                    IsOcc = True
 
 
 
@@ -329,7 +325,7 @@ class GridSpacePathing:
                         grid.cell_height = self._currmap.info.resolution*NumOfOcc
                         grid.cell_width = self._currmap.info.resolution*NumOfOcc
                         grid.header.frame_id = "map"
-                        currPoint = WayPoint(p.x, p.y,100)
+                        currPoint = WayPoint(p.x, p.y, 100)
                         self._waypointlist.append(currPoint)
 
                     #for every empty space
@@ -339,7 +335,7 @@ class GridSpacePathing:
                         p.y = self._currmap.info.origin.position.y + r*NumOfOcc*self._currmap.info.resolution + self._currmap.info.resolution*NumOfOcc/2
                         p.z = 0
                         # add the waypoint to the grid and see if it should be the robot's position via nearest neighbor
-                        currPoint = WayPoint(p.x, p.y)
+                        currPoint = WayPoint(p.x, p.y, -1, spaces)
                         self._waypointlist.append(currPoint)
                         if currPoint.calculateMDistance(robot) < closest.calculateMDistance(robot):
                             closest = currPoint

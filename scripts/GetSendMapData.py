@@ -56,6 +56,9 @@ class GridSpacePathing:
         self._OccGrids = GridCells()
         #is there a path that the robot is navigating to?
         self.IsPath = False
+        self.front = GridCells()
+        self.Unocc = GridCells()
+
 
         #subscribe to the map's occupancy grid.
         #set up the visualization for the grid and path
@@ -65,6 +68,8 @@ class GridSpacePathing:
         self._ShowEnd = rospy.Publisher('/nav_msgs/GridCellsEnd', GridCells, None, queue_size=1)
         self._ShowPathGrid = rospy.Publisher('/nav_msgs/GridCellsPath', GridCells, None, queue_size=1)
         self._ShowPathPath = rospy.Publisher('/Aplan', Path, None, queue_size=1)
+        self._ShowFront = self._ShowPathGrid = rospy.Publisher('/nav_msgs/GridCellsFrontier', GridCells, None, queue_size=1)
+        self._Showunocc = self._ShowPathGrid = rospy.Publisher('/nav_msgs/GridCellsChecked', GridCells, None, queue_size=1)
         #print("here")
         rospy.Timer(rospy.Duration(1), self.CreateMapOccupancy) #will be useful for D*
 
@@ -89,7 +94,6 @@ class GridSpacePathing:
 
         #update the robot's position as it relates to waypoints
         self._robot = self.FindNNInWayPoints(WayPoint(self._current.position.x, self._current.position.y))
-
         for i in range(len(self._waypointlist)):
             if self._currmap.data[i] != 100 and self._waypointlist[i].calculateMDistance(self._goalWay) < closest.calculateMDistance(self._goalWay):
                 closest = self._waypointlist[i]
@@ -238,14 +242,18 @@ class GridSpacePathing:
         #if the occupancy changes, then update the pathfinding
         CheckUpdatePath = False
         for wayp in self._waypointlist:
-                if(wayp<70):
+                if(wayp<70 and wayp != self._robot):
                     isNowOcc = False
+                    isKnown = True
                     OccVal = 0
                     for ind in wayp.spaces:
                         if self._allMaps[-1].data[ind] >= 70:
                             isNowOcc=True
-                            OccVal = self._allMaps[-1].data[ind]
 
+                        elif self._allMaps[-1].data[ind] < 0:
+                            isKnown = False
+                        if OccVal < self._allMaps[-1].data[ind]:
+                            OccVal = self._allMaps[-1].data[ind]
 
                     if isNowOcc == True:
 
@@ -261,10 +269,20 @@ class GridSpacePathing:
                             wayp.connectedNodes[neighbor].connectedNodes.remove(wayp)
                         wayp.connectedNodes = []
                         CheckUpdatePath = True
+                    elif isKnown:
+                        self.Unocc.cells.append(wayp.point)
+                        self.Unocc.cell_height = self._currmap.info.resolution * int(
+                            math.ceil(self._robotSize / self._currmap.info.resolution))
+                        self.Unocc.cell_width = self._currmap.info.resolution * int(
+                            math.ceil(self._robotSize / self._currmap.info.resolution))
+                        self.Unocc.header.frame_id = "map"
+                        self._Showunocc.publish(self.Unocc)
+                        wayp._occ = OccVal
 
         self._showOccupied.publish(self._OccGrids)
         print("here6")
         #if there is a path and the occupancy grid was updated
+        self.Genfrontier([], self._waypointlist)
         if CheckUpdatePath and self.IsPath:
             #reset the pathfinding
             tempPublisher = rospy.Publisher('/AReset', Twist, None, queue_size=1)
@@ -294,7 +312,6 @@ class GridSpacePathing:
             grid = GridCells()
 
             #this is used for nearest neighbor method for finding the robot
-            closest = WayPoint(-10000,-10000)
             print(self._current.position.x, self._current.position.y)
             robot = WayPoint(self._current.position.x, self._current.position.y)
 
@@ -329,7 +346,7 @@ class GridSpacePathing:
                         grid.cell_height = self._currmap.info.resolution*NumOfOcc
                         grid.cell_width = self._currmap.info.resolution*NumOfOcc
                         grid.header.frame_id = "map"
-                        currPoint = WayPoint(p.x, p.y,100)
+                        currPoint = WayPoint(p.x, p.y, 100, spaces)
                         self._waypointlist.append(currPoint)
 
                     #for every empty space
@@ -341,19 +358,23 @@ class GridSpacePathing:
                         # add the waypoint to the grid and see if it should be the robot's position via nearest neighbor
                         currPoint = WayPoint(p.x, p.y, -1, spaces)
                         self._waypointlist.append(currPoint)
-                        if currPoint.calculateMDistance(robot) < closest.calculateMDistance(robot):
-                            closest = currPoint
                             #print("")
             #print(i)
-
+            closest = self._waypointlist[0]
+            # finds nearest waypoint in the actual grid to neighbor to this point,
+            # could probably be done with Astar
+            for i in range(len(self._waypointlist)):
+                if self._waypointlist[i].calculateMDistance(robot) < closest.calculateMDistance(robot):
+                    closest = self._waypointlist[i]
             #publish the grid
             #update info
-            grid.cells.append(closest.point)
             self._showOccupied.publish(grid)
             self._OccGrids = grid
             self.RobotPoseInit = False
             self.UpdateOriginalMapOnce = False
             self._robot = closest
+
+            closest._occ = 0
 
             print("............")
             print(self._currmap.info.height*self._currmap.info.width)
@@ -484,36 +505,42 @@ class GridSpacePathing:
 
 
     def Genfrontier(self, frontiers, waypointMap):
+        print("HEYboi")
+        self.front.cells = []
         for wayp in waypointMap:
             front = False
-            occ = False
-            for neighbor in wayp.connectedNodes:
-                if neighbor._occ >= 70:
-                    occ = True
-                if neighbor._occ == -1:
-                    front = True
-            if occ == False and front == True:
-                alreadyFront = False
-                for LOWP in frontiers:
-                    if wayp in LOWP:
-                        alreadyFront = True
-                if alreadyFront == False:
-                    newFront = []
-                    self.CreateFrontier(wayp, newFront)
-                    frontiers.append()
+            if(wayp._occ >= 0 and wayp._occ < 70):
+                print("HEYboi2")
+                for neighbor in wayp.connectedNodes:
+                    if neighbor._occ == -1:
+                        front = True
+                if wayp.connectedNodes>=4 and front == True:
+                    alreadyFront = False
+                    for LOWP in frontiers:
+                        if wayp in LOWP:
+                            alreadyFront = True
+                    if alreadyFront == False:
+                        newFront = []
+                        self.CreateFrontier(wayp, newFront)
+                        frontiers.append(newFront)
+        self.front.cell_height = self._currmap.info.resolution * int(
+            math.ceil(self._robotSize / self._currmap.info.resolution))
+        self.front.cell_width = self._currmap.info.resolution * int(
+            math.ceil(self._robotSize / self._currmap.info.resolution))
+        self.front.header.frame_id = "map"
+        self._ShowFront.publish(self.front)
 
     def CreateFrontier(self, wayp, newFront):
         newFront.append(wayp)
+
+        self.front.cells.append(wayp.point)
         for neighbor in wayp.connectedNodes:
-            if neighbor not in newFront:
+            if neighbor not in newFront and (wayp._occ > 0 and wayp._occ<70):
                 front = False
-                occ = False
                 for neighborValid in neighbor.connectedNodes:
-                    if neighborValid._occ >= 70:
-                        occ = True
                     if neighborValid._occ == -1:
                         front = True
-                if occ == False and front == True:
+                if wayp.connectedNodes>=4 and front == True:
                     self.CreateFrontier(neighbor, newFront)
 
 if __name__ == '__main__':

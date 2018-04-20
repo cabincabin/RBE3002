@@ -58,7 +58,7 @@ class GridSpacePathing:
         self.IsPath = False
         self.front = GridCells()
         self.Unocc = GridCells()
-
+        self.frontierList = []
 
         #subscribe to the map's occupancy grid.
         #set up the visualization for the grid and path
@@ -282,7 +282,17 @@ class GridSpacePathing:
         self._showOccupied.publish(self._OccGrids)
         print("here6")
         #if there is a path and the occupancy grid was updated
+
         self.Genfrontier([], self._waypointlist)
+        bestFrontierCenter = self.findBestFrontier(self.frontierList)
+        print("\n\nThis is the selected center:")
+        print("X: " + str(bestFrontierCenter.point.x))
+        print("Y: " + str(bestFrontierCenter.point.y))
+
+        singleNodeArr = [bestFrontierCenter]
+        distance = abs(bestFrontierCenter.point.x - bestFrontierCenter.connectedNodes[0].point.x)
+        drawGrid('/nav_msgs/GridCellsStart',singleNodeArr,distance)
+
         if CheckUpdatePath and self.IsPath:
             #reset the pathfinding
             tempPublisher = rospy.Publisher('/AReset', Twist, None, queue_size=1)
@@ -482,7 +492,7 @@ class GridSpacePathing:
         centerFrontierValue = self.findFrontierCenter(frontier)
 
         # Calculate the distance between the robot and the frontier value
-        distanceToFrontier = centerFrontierValue.calculateMDDistance(self._robot)
+        distanceToFrontier = centerFrontierValue.calculateMDistance(self._robot)
         lengthOfFrontier = len(frontier)
 
         return ((distanceTune * distanceToFrontier) + (lengthTune*lengthOfFrontier))
@@ -503,7 +513,7 @@ class GridSpacePathing:
 
         return self.findFrontierCenter(bestFrontier)
 
-
+    # Create an array of viable frontier nodes
     def Genfrontier(self, frontiers, waypointMap):
         # print("HEYboi")
         self.front = GridCells()
@@ -556,6 +566,7 @@ class GridSpacePathing:
                 self.addCloseNodes(newFrontier, allFrontierNodes, baseNode)
                 print("This is the length of the added frontier: " + str(len(newFrontier)))
                 listOfFrontiers.append(newFrontier)
+        self.frontierList = listOfFrontiers
 
     # Recursive algorithm that looks through all the frontier nodes for nodes
     # that are close enough to be clustered

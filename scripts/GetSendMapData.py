@@ -13,6 +13,7 @@ from AStarTest import WayPoint, AStar
 from geometry_msgs.msg import Point, Twist, Pose, PoseStamped
 from nav_msgs.msg import OccupancyGrid, GridCells, Path
 from tf.transformations import euler_from_quaternion, quaternion_from_euler
+import time
 import numpy as np
 from Draw import drawGrid
 from std_msgs.msg import String
@@ -59,6 +60,8 @@ class GridSpacePathing:
         self.front = GridCells()
         self.Unocc = GridCells()
         self.frontierList = []
+        self.isCurrFrontGoal = False
+        self.frontGoal = WayPoint(-10000,-10000)
 
         #subscribe to the map's occupancy grid.
         #set up the visualization for the grid and path
@@ -69,6 +72,7 @@ class GridSpacePathing:
         self._ShowPathGrid = rospy.Publisher('/nav_msgs/GridCellsPath', GridCells, None, queue_size=1)
         self._ShowPathPath = rospy.Publisher('/Aplan', Path, None, queue_size=1)
         self._ShowFront = rospy.Publisher('/nav_msgs/GridCellsFrontier', GridCells, None, queue_size=1)
+        self._goToFront = rospy.Publisher('/move_base_simple/goal', PoseStamped, None, queue_size=10)
         self._Showunocc = self._ShowPathGrid = rospy.Publisher('/nav_msgs/GridCellsChecked', GridCells, None, queue_size=1)
         #print("here")
         rospy.Timer(rospy.Duration(1), self.CreateMapOccupancy) #will be useful for D*
@@ -282,16 +286,7 @@ class GridSpacePathing:
         self._showOccupied.publish(self._OccGrids)
         print("here6")
         #if there is a path and the occupancy grid was updated
-
-        self.Genfrontier([], self._waypointlist)
-        bestFrontierCenter = self.findBestFrontier(self.frontierList)
-        print("\n\nThis is the selected center:")
-        print("X: " + str(bestFrontierCenter.point.x))
-        print("Y: " + str(bestFrontierCenter.point.y))
-
-        singleNodeArr = [bestFrontierCenter]
-        distance = abs(bestFrontierCenter.point.x - bestFrontierCenter.connectedNodes[0].point.x)
-        drawGrid('/nav_msgs/GridCellsStart',singleNodeArr,distance)
+        #drawGrid('/nav_msgs/GridCellsStart',singleNodeArr,distance)
 
         if CheckUpdatePath and self.IsPath:
             #reset the pathfinding
@@ -408,6 +403,23 @@ class GridSpacePathing:
                     if i - int(math.floor(self._currmap.info.width/NumOfOcc)) >= 0 and self._waypointlist[i-int(math.floor(self._currmap.info.width/NumOfOcc))]._occ < 70:
                         self._waypointlist[i].connectedNodes.append(self._waypointlist[i-int(math.floor(self._currmap.info.width/NumOfOcc))])
 
+            self.Genfrontier(self._waypointlist)
+            bestFrontierCenter = self.findBestFrontier(self.frontierList)
+            print("\n\nThis is the selected center:")
+            print("X: " + str(bestFrontierCenter.point.x))
+            print("Y: " + str(bestFrontierCenter.point.y))
+
+            # singleNodeArr = [bestFrontierCenter]
+            # distance = abs(bestFrontierCenter.point.x - bestFrontierCenter.connectedNodes[0].point.x)
+            p = PoseStamped()
+            p.pose.position = bestFrontierCenter.point
+            p.pose.orientation.z = -0.015781883727
+            p.pose.orientation.w = 0.999875458318
+            p.header.frame_id = "map"
+            p.header.stamp = rospy.Time.now()
+            self._goToFront.publish(p)
+            self.frontGoal = bestFrontierCenter
+            self.isCurrFrontGoal = True
             #DRAW THE GRID IN TERMINAL
             # #for every item in the grid print out the grid to the console
             # for i in range(len(self._waypointlist)):
@@ -459,6 +471,25 @@ class GridSpacePathing:
         # Update yaw var
         self._yaw = yaw
         self.RobotPoseInit = True
+
+        if(self.isCurrFrontGoal and abs((self.frontGoal.point.x - self._current.position.x)**2+(self.frontGoal.point.y - self._current.position.y)**2) < .1):
+            r
+            self.Genfrontier(self._waypointlist)
+            bestFrontierCenter = self.findBestFrontier(self.frontierList)
+            print("\n\nThis is the selected center:")
+            print("X: " + str(bestFrontierCenter.point.x))
+            print("Y: " + str(bestFrontierCenter.point.y))
+
+            #singleNodeArr = [bestFrontierCenter]
+            #distance = abs(bestFrontierCenter.point.x - bestFrontierCenter.connectedNodes[0].point.x)
+            p = PoseStamped()
+            p.pose.position = bestFrontierCenter.point
+            p.header.frame_id = "map"
+            p.pose.orientation.z = -0.015781883727
+            p.pose.orientation.w = 0.999875458318
+            p.header.stamp = rospy.Time.now()
+            self._goToFront.publish(p)
+            self.frontGoal = bestFrontierCenter
 
     # Find the centroid of a frontier and then find the waypoint closest to the centroid and return it
     def findFrontierCenter(self, frontier):
@@ -514,7 +545,8 @@ class GridSpacePathing:
         return self.findFrontierCenter(bestFrontier)
 
     # Create an array of viable frontier nodes
-    def Genfrontier(self, frontiers, waypointMap):
+    def Genfrontier(self, waypointMap):
+        frontiers = []
         # print("HEYboi")
         self.front = GridCells()
         self.front.cells = []
@@ -539,6 +571,7 @@ class GridSpacePathing:
         self.front.cell_width = self._currmap.info.resolution * int(
             math.ceil(self._robotSize / self._currmap.info.resolution))
         self.front.header.frame_id = "map"
+
         self._ShowFront.publish(self.front)
         print("The frontier should have been published")
         self.groupFrontier(frontiers)

@@ -514,7 +514,7 @@ class GridSpacePathing:
                 for neighbor in wayp.connectedNodes:
                     if neighbor._occ == -1:
                         front = True
-                if wayp.connectedNodes>=4 and front == True:
+                if wayp.connectedNodes >= 4 and front == True:
                     alreadyFront = False
                     for LOWP in frontiers:
                         if wayp in LOWP:

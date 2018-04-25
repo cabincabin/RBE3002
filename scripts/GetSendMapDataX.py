@@ -72,13 +72,68 @@ class GridSpacePathing:
         self._ShowPathGrid = rospy.Publisher('/nav_msgs/GridCellsPath', GridCells, None, queue_size=1)
         self._ShowPathPath = rospy.Publisher('/Aplan', Path, None, queue_size=1)
         self._ShowFront = rospy.Publisher('/nav_msgs/GridCellsFrontier', GridCells, None, queue_size=1)
+        self._goToFront = rospy.Publisher('/move_base_simple/goal', PoseStamped, None, queue_size=10)
         self._Showunocc = self._ShowPathGrid = rospy.Publisher('/nav_msgs/GridCellsChecked', GridCells, None, queue_size=1)
         #print("here")
         rospy.Timer(rospy.Duration(1), self.CreateMapOccupancy) #will be useful for D*
 
         # Timers and Subscribers
         #when a nav goal is published, pathfind to this position.
-        rospy.Subscriber('/move_base_simple/goal1', PoseStamped, self.PathToPos, queue_size=1)
+        #rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.PathToPos, queue_size=1)
+
+    def roundCorner(wlist, p1, p2, p3): 
+	x1 = p1.x 
+	y1 = p1.y 
+	x2 = p2.x 
+	y2 = p2.y 
+	x3 = p3.x 
+	y3 = p3.y 
+	center = point(0, 0, 0) 
+
+	if p1.calculateMDistance(p2) = p2.calculateMDistance(p3): 
+	    radius = p1.calculateMDistance(p2) 
+	    if x1 = x2: 
+	        center.x = x3 
+		center.y = y1 
+	    else: 
+		center.x = x1 
+		center.y = y3 
+	if p1.calculateMDistance(p2) < p2.calculateMDistance(p3): 
+	    radius = p1.calculateMDistance(p2) 
+	    if x1 = x2: 
+		center.y = y1 
+		if x3 > x2: 
+		    center.x = x2 + radius 
+		    p3.x = x2 + radius 
+		else: 
+		    center.x = x2 - radius 
+		    p3.x = x2 - radius 
+	    else: 
+		center.x = x1 
+		if y3 > y2: 
+		    center.y = y2 + radius 
+		    p3.y = y2 + radius 
+		else: 
+		    center.y = y2 - radius 
+		    p3.y = y2 -radius 
+	else: 
+	    radius = p2.calculateMDistance(p3) 
+	    if x3 = x2: 
+		center.y = y3 
+		if x1 > x2: 
+		    center.x = x2 + radius 
+		    p1.x = x2 + radius 
+		else: 
+		    center.x = x2 - radius 
+		    p1.x = x2 - radius 
+	    else: 
+		center.x = x3 
+		if y1 > y2: 
+		    center.y = y2 + radius 
+		    p1.y = y2 + radius 
+		else: 
+		    center.y = y2 - radius 
+		    p1.y = y2 -radius 
 
     def PathToPos(self, goal):
         self._CurrGoal = goal
@@ -143,26 +198,7 @@ class GridSpacePathing:
             p.x = node.point.x
             p.y = node.point.y
             p.z = 0
-            if(len(node.connectedNodes) < 4):
-                for n in node.connectedNodes:
-                    if n.point.x > node.point.x -.001 and n.point.x < node.point.x +.001:
-                        #add a displacement to the y offset in the direction of the previous node
-                        #via unit vector
-                        p.y = p.y + (n.point.y - node.point.y)/abs(
-                            n.point.y - node.point.y) * self._currmap.info.resolution * int(
-                            math.ceil(self._robotSize / self._currmap.info.resolution))/2
-
-                    if n.point.y > node.point.y -.001 and n.point.y < node.point.y +.001:
-                        # add a displacement to the y offset in the direction of the previous node
-                        # via unit vector
-                        p.x = p.x + (n.point.x - node.point.x) / abs(
-                            n.point.x - node.point.x) * self._currmap.info.resolution * int(
-                            math.ceil(self._robotSize / self._currmap.info.resolution)) / 2
-
             pose = PoseStamped()
-            rospy.sleep(1.0)
-            pose.header.frame_id = "map"
-            pose.header.stamp = rospy.Time.now()
             pose.pose.position = node.point
             pathDisp.poses.append(pose)
             grid.cells.append(p)
@@ -180,8 +216,11 @@ class GridSpacePathing:
         pathDisp.poses.reverse()
         pathDisp.poses.append(goal)
 
+
+
         #get only the intermediate changes
         for i in range(len(pathDisp.poses)-1):
+            if i > 0:
                 #calculate the angle and add it to the corrisponding node
                 ang = math.atan2(-pathDisp.poses[i].pose.position.y+pathDisp.poses[i+1].pose.position.y, -pathDisp.poses[i].pose.position.x+pathDisp.poses[i+1].pose.position.x)
                 quat = quaternion_from_euler(0,0,ang)
@@ -190,8 +229,9 @@ class GridSpacePathing:
                 pathDisp.poses[i].pose.orientation.z = quat[2]
                 pathDisp.poses[i].pose.orientation.w = quat[3]
 
+
         #show the path
-        pathDisp.poses.pop(0)
+        pathDisp.poses[0].pose.orientation = pathDisp.poses[1].pose.orientation
         self._ShowPathGrid.publish(grid)
         self._ShowPathPath.publish(pathDisp)
 
@@ -417,6 +457,23 @@ class GridSpacePathing:
                     if i - int(math.floor(self._currmap.info.width/NumOfOcc)) >= 0 and self._waypointlist[i-int(math.floor(self._currmap.info.width/NumOfOcc))]._occ < 70:
                         self._waypointlist[i].connectedNodes.append(self._waypointlist[i-int(math.floor(self._currmap.info.width/NumOfOcc))])
 
+            self.Genfrontier(self._waypointlist)
+            bestFrontierCenter = self.findBestFrontier(self.frontierList)
+            print("\n\nThis is the selected center:")
+            print("X: " + str(bestFrontierCenter.point.x))
+            print("Y: " + str(bestFrontierCenter.point.y))
+
+            # singleNodeArr = [bestFrontierCenter]
+            # distance = abs(bestFrontierCenter.point.x - bestFrontierCenter.connectedNodes[0].point.x)
+            p = PoseStamped()
+            p.pose.position = bestFrontierCenter.point
+            p.pose.orientation.z = -0.015781883727
+            p.pose.orientation.w = 0.999875458318
+            p.header.frame_id = "map"
+            p.header.stamp = rospy.Time.now()
+            self._goToFront.publish(p)
+            self.frontGoal = bestFrontierCenter
+            self.isCurrFrontGoal = True
             #DRAW THE GRID IN TERMINAL
             # #for every item in the grid print out the grid to the console
             # for i in range(len(self._waypointlist)):
@@ -468,6 +525,24 @@ class GridSpacePathing:
         # Update yaw var
         self._yaw = yaw
         self.RobotPoseInit = True
+
+        if(self.isCurrFrontGoal and abs((self.frontGoal.point.x - self._current.position.x)**2+(self.frontGoal.point.y - self._current.position.y)**2) < .1):
+            self.Genfrontier(self._waypointlist)
+            bestFrontierCenter = self.findBestFrontier(self.frontierList)
+            print("\n\nThis is the selected center:")
+            print("X: " + str(bestFrontierCenter.point.x))
+            print("Y: " + str(bestFrontierCenter.point.y))
+
+            #singleNodeArr = [bestFrontierCenter]
+            #distance = abs(bestFrontierCenter.point.x - bestFrontierCenter.connectedNodes[0].point.x)
+            p = PoseStamped()
+            p.pose.position = bestFrontierCenter.point
+            p.header.frame_id = "map"
+            p.pose.orientation.z = -0.015781883727
+            p.pose.orientation.w = 0.999875458318
+            p.header.stamp = rospy.Time.now()
+            self._goToFront.publish(p)
+            self.frontGoal = bestFrontierCenter
 
     # Find the centroid of a frontier and then find the waypoint closest to the centroid and return it
     def findFrontierCenter(self, frontier):

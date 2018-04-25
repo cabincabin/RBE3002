@@ -43,6 +43,37 @@ class Robot:
         self.interrupt = True
         print("interrupted")
 
+    def moveCorner(pose1, pose2, pose3): 
+	velocity = 1 # tangential velocity we want the robot to travel at 
+	diameter = 0.23 # wheel base diameter 
+
+	x1 = pose1.pose.position.x 
+	y1 = pose1.pose.position.y 
+	x2 = pose2.pose.position.x 
+	y2 = pose2.pose.position.y 
+	angle1 = pose1.pose.orientation.z 
+	angle3 = pose3.pose.orientation.z 
+
+	# calculate difference in orientation between starting and final poses 
+	# (expected to be right angle)
+	angle_delta = angle3 - angle1 
+	
+	# calculate distance between two successive points = radius for arc 
+	# assign sign according to the sign of difference in orientation 
+	if angle_delta > 0: 
+	    radius = math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) 
+	else: 
+	    radius = -math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2) 
+
+	omega = velocity / radius # calculate angular velocity 
+	time = angle_delta / omega # calculate time required 
+
+	# calculate velocity for both wheels 
+	v-left = velocity * ((radius - (diameter / 2)) / radius) 
+	v-right = velocity * ((radius + (diameter / 2)) / radius) 
+
+	self.spinWheels(v-left, v-right, time) 
+
     def navToPose(self, goal):
         # Go to a specific location and assume orientation
         self.interrupt = False

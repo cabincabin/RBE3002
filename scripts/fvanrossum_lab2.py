@@ -23,8 +23,8 @@ class Robot:
 
         # Variables
         # Toggle between simulation and turtlebot3
-        self._pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, None, queue_size = 1)
-        # self._pub = rospy.Publisher('/cmd_vel', Twist, None, queue_size = 1)
+        #self._pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, None, queue_size = 1)
+        self._pub = rospy.Publisher('cmd_vel', Twist, None, queue_size = 1)
         self._odom_list = tf.TransformListener()
         self._roll = 0
         self._pitch = 0
@@ -33,7 +33,7 @@ class Robot:
 
         # Timers and Subscribers
         rospy.Timer(rospy.Duration(0.1), self.timerCallback)
-        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.navToPose, queue_size = 1)
+        rospy.Subscriber('/move_base_simple/goal1', PoseStamped, self.navToPose, queue_size = 1)
 
     def navToPose(self,goal):
         # Go to a specific location and assume orientation

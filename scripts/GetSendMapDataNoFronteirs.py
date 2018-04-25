@@ -161,11 +161,8 @@ class GridSpacePathing:
         pathDisp.poses.reverse()
         pathDisp.poses.append(goal)
 
-
-
         #get only the intermediate changes
         for i in range(len(pathDisp.poses)-1):
-            if i > 0:
                 #calculate the angle and add it to the corrisponding node
                 ang = math.atan2(-pathDisp.poses[i].pose.position.y+pathDisp.poses[i+1].pose.position.y, -pathDisp.poses[i].pose.position.x+pathDisp.poses[i+1].pose.position.x)
                 quat = quaternion_from_euler(0,0,ang)
@@ -174,9 +171,8 @@ class GridSpacePathing:
                 pathDisp.poses[i].pose.orientation.z = quat[2]
                 pathDisp.poses[i].pose.orientation.w = quat[3]
 
-
         #show the path
-        pathDisp.poses[0].pose.orientation = pathDisp.poses[1].pose.orientation
+        pathDisp.poses.pop(0)
         self._ShowPathGrid.publish(grid)
         self._ShowPathPath.publish(pathDisp)
 

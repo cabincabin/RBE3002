@@ -143,6 +143,22 @@ class GridSpacePathing:
             p.x = node.point.x
             p.y = node.point.y
             p.z = 0
+            if(len(node.connectedNodes) < 4):
+                for n in node.connectedNodes:
+                    if n.point.x > node.point.x -.001 and n.point.x < node.point.x +.001:
+                        #add a displacement to the y offset in the direction of the previous node
+                        #via unit vector
+                        p.y = p.y + (n.point.y - node.point.y)/abs(
+                            n.point.y - node.point.y) * self._currmap.info.resolution * int(
+                            math.ceil(self._robotSize / self._currmap.info.resolution))/2
+
+                    if n.point.y > node.point.y -.001 and n.point.y < node.point.y +.001:
+                        # add a displacement to the y offset in the direction of the previous node
+                        # via unit vector
+                        p.x = p.x + (n.point.x - node.point.x) / abs(
+                            n.point.x - node.point.x) * self._currmap.info.resolution * int(
+                            math.ceil(self._robotSize / self._currmap.info.resolution)) / 2
+
             pose = PoseStamped()
             pose.pose.position = node.point
             pathDisp.poses.append(pose)

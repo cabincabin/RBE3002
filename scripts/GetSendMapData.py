@@ -72,7 +72,7 @@ class GridSpacePathing:
         self._ShowPathGrid = rospy.Publisher('/nav_msgs/GridCellsPath', GridCells, None, queue_size=1)
         self._ShowPathPath = rospy.Publisher('/Aplan', Path, None, queue_size=1)
         self._ShowFront = rospy.Publisher('/nav_msgs/GridCellsFrontier', GridCells, None, queue_size=1)
-        self._goToFront = rospy.Publisher('/move_base_simple/goal', PoseStamped, None, queue_size=10)
+        self._goToFront = rospy.Publisher('/move_base_simple/goal1', PoseStamped, None, queue_size=10)
         self._Showunocc = self._ShowPathGrid = rospy.Publisher('/nav_msgs/GridCellsChecked', GridCells, None, queue_size=1)
         #print("here")
         rospy.Timer(rospy.Duration(1), self.CreateMapOccupancy) #will be useful for D*
@@ -473,7 +473,6 @@ class GridSpacePathing:
         self.RobotPoseInit = True
 
         if(self.isCurrFrontGoal and abs((self.frontGoal.point.x - self._current.position.x)**2+(self.frontGoal.point.y - self._current.position.y)**2) < .1):
-            r
             self.Genfrontier(self._waypointlist)
             bestFrontierCenter = self.findBestFrontier(self.frontierList)
             print("\n\nThis is the selected center:")

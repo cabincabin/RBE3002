@@ -24,7 +24,7 @@ class Robot:
 
         # Variables
         # Toggle between simulation and turtlebot3
-        self._pub = rospy.Publisher('/cmd_vel_mux/input/teleop', Twist, None, queue_size = 1)
+        self._pub = rospy.Publisher('cmd_vel', Twist, None, queue_size = 1)
         # self._pub = rospy.Publisher('/cmd_vel', Twist, None, queue_size = 1)
         self._odom_list = tf.TransformListener()
         self._roll = 0
@@ -37,7 +37,7 @@ class Robot:
         # Timers and Subscribers
         rospy.Timer(rospy.Duration(.025), self.timerCallback)
         rospy.Subscriber('/Aplan', Path, self.navToPose, queue_size = 1)
-        rospy.Subscriber('/AReset', Twist, self.toggleInterrupt, queue_size=1)
+        #rospy.Subscriber('/AReset', Twist, self.toggleInterrupt, queue_size=1)
 
     def toggleInterrupt(self, evprent):
         self.interrupt = True
@@ -52,6 +52,9 @@ class Robot:
         print("here1")
         # Convert goal to robot coordinates
         for pathIndex in range(len(goal.poses)):
+            distthresh = .3
+            if pathIndex == len(goal.poses)-1:
+                distthresh = .05
             self._odom_list.waitForTransform('/odom', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))
             rospy.sleep(1.0)
             transGoal = goal.poses[pathIndex] # transform the nav goal from the global coordinate system to the robot's coordinate system
@@ -85,8 +88,8 @@ class Robot:
 
             # Keep driving to the point in small increments, adjusts if heading
             # is not correct, loops until threshold is reached
-            thresh = 0.3
-            while(distance_to_dest > thresh) and not self.interrupt:
+
+            while(distance_to_dest > distthresh) and not self.interrupt:
                 x_dest = transGoal.pose.position.x
                 y_dest = transGoal.pose.position.y
 

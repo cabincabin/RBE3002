@@ -52,12 +52,15 @@ class Robot:
         print("here1")
         # Convert goal to robot coordinates
         for pathIndex in range(len(goal.poses)):
-            distthresh = .3
-            if pathIndex == len(goal.poses)-1:
-                distthresh = .05
+            # if pathIndex == len(goal.poses)-1:
+            #     distthresh = .1
+            # else:
+            distthresh = .2
+
             self._odom_list.waitForTransform('/odom', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))
             rospy.sleep(1.0)
-            transGoal = goal.poses[pathIndex] # transform the nav goal from the global coordinate system to the robot's coordinate system
+            goal.poses[pathIndex].header.stamp = rospy.Time.now()
+            transGoal = self._odom_list.transformPose('/odom', goal.poses[pathIndex]) # transform the nav goal from the global coordinate system to the robot's coordinate system
 
             # Destination data
             x_dest = transGoal.pose.position.x
@@ -99,7 +102,7 @@ class Robot:
 
                 angle_dest = transGoal.pose.orientation.z
 
-                temp_angle = math.atan2((y_dest - y_current) ,(x_dest - x_current))
+                temp_angle = math.atan2((y_dest - y_current),(x_dest - x_current))
 
                 if(temp_angle < 0):
                     temp_angle = temp_angle + (2*math.pi)
@@ -112,7 +115,7 @@ class Robot:
                 self.rotate(angle_to_dest)
 
                 print('going to destination')
-                self.driveStraight(0.3, distance_to_dest/2.0)
+                self.driveStraight(0.05, distance_to_dest/2.0)
 
                 yaw_current = self._yaw
 
@@ -120,6 +123,7 @@ class Robot:
 
             # Final rotation to face the final orientation
             if pathIndex == len(goal.poses) -1:
+                print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 print('Final rotation')
 
                 q = [transGoal.pose.orientation.x,
@@ -194,7 +198,9 @@ class Robot:
         driveStartTime = rospy.get_time()
         rospy.sleep(0.01)
         updatedTime = rospy.get_time()
+        rospy.sleep(0.01)
         driveStartTime = rospy.get_time()
+        rospy.sleep(0.01)
         passedTime = updatedTime - driveStartTime
 
         # Debug print statements
@@ -298,7 +304,6 @@ class Robot:
         if(yaw < 0 ):
             yaw = yaw + (math.pi*2)
 
-        # Update yaw var
         self._yaw = yaw
 
     # helper functions
@@ -309,17 +314,8 @@ class Robot:
 
     def localizationSpin(self):
         print("Started the localization spin")
-        currentTime = rospy.get_time()
-        rospy.Rate(10).sleep()
-        updatedTime = rospy.get_time()
-        spinTime = 3 # Time the robot spends spinning
-
-        difference = abs(currentTime - updatedTime)
-        while difference < 3:
-            self.rotate(0.1)
-            rospy.Rate(3).sleep() # Slow down the loop
-            difference = abs(currentTime - updatedTime)
-
+        spinTime = 20 # Time the robot spends spinning
+        self.spinWheels(-0.5,0.5,spinTime)
         print("We have completed the localization spin")
 
 if __name__ == '__main__':
@@ -339,7 +335,13 @@ if __name__ == '__main__':
     #test function calls here
     rospy.Rate(10).sleep()
 
+    flag = False
     while not rospy.is_shutdown():
+        if not flag:
+            turtle.localizationSpin()
+            flag = True
+            print("swv")
+            turtle.spinWheels(0, 0, 0.1)
 
         # Prints for debugging
         print('X: ' + str(turtle._current.position.x))
@@ -350,7 +352,8 @@ if __name__ == '__main__':
         pass
 
     # Turn off motors
+    turtle.interrupt = True
     turtle.spinWheels(0,0,1.)
 
-    # Spin in circles for a bit:
-    turtle.localizationSpin()
+
+

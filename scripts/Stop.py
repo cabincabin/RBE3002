@@ -27,5 +27,7 @@ def stopMoving():
     print("\n\nStop Command Sent!")
 
 if __name__ == '__main__':
+    rospy.init_node('stopper')
+    rospy.Rate(10).sleep()
     print("I am going to try to stop the robot from moving")
     stopMoving()

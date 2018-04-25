@@ -307,6 +307,20 @@ class Robot:
             Bonus Question:  compute the coefs for a cubic polynomial (hint:  you did this in 3001)
         """
 
+    def localizationSpin(self):
+        print("Started the localization spin")
+        currentTime = rospy.get_time()
+        rospy.Rate(10).sleep()
+        updatedTime = rospy.get_time()
+        spinTime = 3 # Time the robot spends spinning
+
+        difference = abs(currentTime - updatedTime)
+        while difference < 3:
+            self.rotate(0.1)
+            rospy.Rate(3).sleep() # Slow down the loop
+            difference = abs(currentTime - updatedTime)
+
+        print("We have completed the localization spin")
 
 if __name__ == '__main__':
 
@@ -337,3 +351,6 @@ if __name__ == '__main__':
 
     # Turn off motors
     turtle.spinWheels(0,0,1.)
+
+    # Spin in circles for a bit:
+    turtle.localizationSpin()

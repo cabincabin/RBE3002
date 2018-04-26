@@ -55,11 +55,12 @@ class Robot:
             # if pathIndex == len(goal.poses)-1:
             #     distthresh = .1
             # else:
-            distthresh = .2
+            distthresh = .193
 
             self._odom_list.waitForTransform('/odom', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))
             rospy.sleep(1.0)
             goal.poses[pathIndex].header.stamp = rospy.Time.now()
+            rospy.sleep(1.0)
             transGoal = self._odom_list.transformPose('/odom', goal.poses[pathIndex]) # transform the nav goal from the global coordinate system to the robot's coordinate system
 
             # Destination data
@@ -91,6 +92,10 @@ class Robot:
 
             # Keep driving to the point in small increments, adjusts if heading
             # is not correct, loops until threshold is reached
+            # dirX = (transGoal.pose.position.x - self._current.position.x) / abs(
+            #     (transGoal.pose.position.x - self._current.position.x))
+            # dirY = (transGoal.pose.position.Y - self._current.position.Y) / abs(
+            #     (transGoal.pose.position.Y - self._current.position.Y))
 
             while(distance_to_dest > distthresh) and not self.interrupt:
                 x_dest = transGoal.pose.position.x
@@ -115,16 +120,16 @@ class Robot:
                 self.rotate(angle_to_dest)
 
                 print('going to destination')
-                self.driveStraight(0.05, distance_to_dest/2.0)
+                self.driveStraight(0.075, distance_to_dest/2.0)
+
+
 
                 yaw_current = self._yaw
 
                 rospy.sleep(0.1)
-
+            self.spinWheels(0.05, 0.05, 0.01)
             # Final rotation to face the final orientation
             if pathIndex == len(goal.poses) -1:
-                print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                print('Final rotation')
 
                 q = [transGoal.pose.orientation.x,
                          transGoal.pose.orientation.y,

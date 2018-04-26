@@ -87,7 +87,8 @@ class AStar:
                     continue
 
                 # Calculate the new GCost with the neighbor
-                tentative_gCost = gCost[current] + current.calculateMDistance(neighbor)
+                neighborNumber = len(current.connectedNodes)
+                tentative_gCost = gCost[current] + current.calculateMDistance(neighbor) + (4 - neighborNumber)
 
                 # Print statement for debugging
                 #print("\n\n\n" + str(tentative_gCost) + "\n\n\n")
@@ -95,7 +96,8 @@ class AStar:
                 # Check if neighbor has been discovered yet
                 if not self.checkIfInArray(notEvaluatedCheck, neighbor):
                     # Neighbor is not yet in our discovered set, add it to PriorityQueue
-                    gCost[neighbor] = gCost[current] + neighbor.calculateMDistance(current)
+                    neighborNumber = len(current.connectedNodes)
+                    gCost[neighbor] = gCost[current] + neighbor.calculateMDistance(current) + (4 - neighborNumber)
                     fCost[neighbor] = gCost[neighbor] + self.heuristicCost(neighbor)
                     notEvaluated.put((fCost[neighbor], neighbor))
                     notEvaluatedCheck.append(neighbor)

@@ -237,7 +237,7 @@ class Robot:
 
         print('This is the dest_angle: ' + str(dest_angle))
 
-        thresh = 0.2
+        thresh = 0.1
 
         diff_angle = abs(dest_angle) - abs(self._yaw)
 

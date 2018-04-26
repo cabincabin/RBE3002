@@ -145,25 +145,23 @@ class GridSpacePathing:
             p.z = 0
             if(len(node.connectedNodes) < 4):
                 for n in node.connectedNodes:
-                    if n.point.x > node.point.x -.001 and n.point.x < node.point.x +.001:
+                    if n.point.x > node.point.x -.0001 and n.point.x < node.point.x +.0001:
                         #add a displacement to the y offset in the direction of the previous node
                         #via unit vector
-                        p.y = p.y + (n.point.y - node.point.y)/abs(
-                            n.point.y - node.point.y) * self._currmap.info.resolution * int(
-                            math.ceil(self._robotSize / self._currmap.info.resolution))/2
+                        print("")
+                        print(p.y)
+                        p.y = p.y + (n.point.y - node.point.y)/2
+                        print(p.y)
 
-                    if n.point.y > node.point.y -.001 and n.point.y < node.point.y +.001:
+                    if n.point.y > node.point.y -.0001 and n.point.y < node.point.y +.0001:
                         # add a displacement to the y offset in the direction of the previous node
                         # via unit vector
-                        p.x = p.x + (n.point.x - node.point.x) / abs(
-                            n.point.x - node.point.x) * self._currmap.info.resolution * int(
-                            math.ceil(self._robotSize / self._currmap.info.resolution)) / 2
-
+                        p.x = p.x + (n.point.x - node.point.x)/2
             pose = PoseStamped()
             rospy.sleep(1.0)
             pose.header.frame_id = "map"
             pose.header.stamp = rospy.Time.now()
-            pose.pose.position = node.point
+            pose.pose.position = p
             pathDisp.poses.append(pose)
             grid.cells.append(p)
             prevNode = node

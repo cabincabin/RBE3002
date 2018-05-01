@@ -103,27 +103,7 @@ class GridSpacePathing:
                 #print("")
         self._goalWay = closest
 
-        #for small grids, display in terminal
-        # #for every waypoint in the grid
-        # #print out the waypoint to the user
-        # for i in range(self._currmap.info.height * self._currmap.info.width):
-        #     #print the robot's position
-        #     if self._waypointlist[i] == self._robot:
-        #         print "_",
-        #     #print the goal's position
-        #     elif self._waypointlist[i] == self._goalWay:
-        #         print "'",
-        #     #print the number of nodes each node is connected to
-        #     elif (i + 1) % self._currmap.info.width != 0:
-        #         if len(self._waypointlist[i].connectedNodes) == 0:
-        #             print " ",
-        #         else:
-        #             print len(self._waypointlist[i].connectedNodes),
-        #     else:
-        #         if len(self._waypointlist[i].connectedNodes) == 0:
-        #             print " "
-        #         else:
-        #             print len(self._waypointlist[i].connectedNodes)
+
 
         #get the path
         star = AStar(self._robot, self._goalWay)
@@ -137,12 +117,17 @@ class GridSpacePathing:
         self._currPath.append(self._goalWay)
         #put the path into GridCells
         prevNode = self._goalWay
+        #create the actual path of the robot from start to finish
         while not reached:
             node = path.get(prevNode)
             p = Point()
             p.x = node.point.x
             p.y = node.point.y
             p.z = 0
+            #for each node in the path, if its next to an occupied location
+            #push the point as far from the occupied location as possible.
+            #this, as a side effect due to the 4 connected-ness will not be affected by walls on corners
+            #createing a "smoothing" of the robot.
             if(len(node.connectedNodes) < 4):
                 for n in node.connectedNodes:
                     if n.point.x > node.point.x -.0001 and n.point.x < node.point.x +.0001:
@@ -157,6 +142,7 @@ class GridSpacePathing:
                         # add a displacement to the y offset in the direction of the previous node
                         # via unit vector
                         p.x = p.x + (n.point.x - node.point.x)/2
+            #add the nodes to the list of nodes.
             pose = PoseStamped()
             rospy.sleep(1.0)
             pose.header.frame_id = "map"
@@ -169,6 +155,7 @@ class GridSpacePathing:
             if node.isSame(self._robot):
                 reached = True
 
+
         grid.cell_height = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
         grid.cell_width = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
         grid.header.frame_id = "map"
@@ -178,7 +165,7 @@ class GridSpacePathing:
         pathDisp.poses.reverse()
         pathDisp.poses.append(goal)
 
-        #get only the intermediate changes
+        #calculate the angle of the robot
         for i in range(len(pathDisp.poses)-1):
                 #calculate the angle and add it to the corrisponding node
                 ang = math.atan2(-pathDisp.poses[i].pose.position.y+pathDisp.poses[i+1].pose.position.y, -pathDisp.poses[i].pose.position.x+pathDisp.poses[i+1].pose.position.x)
@@ -286,13 +273,6 @@ class GridSpacePathing:
                         wayp.connectedNodes = []
                         CheckUpdatePath = True
                     elif isKnown:
-                        # self.Unocc.cells.append(wayp.point)
-                        # self.Unocc.cell_height = self._currmap.info.resolution * int(
-                        #     math.ceil(self._robotSize / self._currmap.info.resolution))
-                        # self.Unocc.cell_width = self._currmap.info.resolution * int(
-                        #     math.ceil(self._robotSize / self._currmap.info.resolution))
-                        # self.Unocc.header.frame_id = "map"
-                        # self._Showunocc.publish(self.Unocc)
                         wayp._occ = OccVal
 
         self._showOccupied.publish(self._OccGrids)
@@ -314,13 +294,6 @@ class GridSpacePathing:
             except NameError:
                 print("no Path Yet")
 
-    # def clearAllGrids(self):
-    #     clearMap('/nav_msgs/GridCellsEnd')
-    #     clearMap('/nav_msgs/GridCellsStart')
-    #     clearMap('/nav_msgs/GridCellsPath')
-    #     emptyPath = Path()
-    #     tempPublisher = rospy.Publisher('APlan', Path, queue_size = 1)
-    #     tempPublisher.publish(emptyPath)
 
     def CreateMapOccupancy(self, evprent): #this should update all nodes and recompute path if needed
         if self._currmap != None and self.RobotPoseInit == True and self.UpdateOriginalMapOnce == True: #remove the only once boolean for D*, will wait until the robot's position is found
@@ -415,23 +388,6 @@ class GridSpacePathing:
                     if i - int(math.floor(self._currmap.info.width/NumOfOcc)) >= 0 and self._waypointlist[i-int(math.floor(self._currmap.info.width/NumOfOcc))]._occ < 70:
                         self._waypointlist[i].connectedNodes.append(self._waypointlist[i-int(math.floor(self._currmap.info.width/NumOfOcc))])
 
-            #DRAW THE GRID IN TERMINAL
-            # #for every item in the grid print out the grid to the console
-            # for i in range(len(self._waypointlist)):
-            #     #draw the robot as
-            #     if self._waypointlist[i] == closest:
-            #         print "_",
-            #     elif (i+1) % int(math.floor(self._currmap.info.width/NumOfOcc))!= 0:
-            #         if len(self._waypointlist[i].connectedNodes) == 0:
-            #             print " ",
-            #         else:
-            #             print len(self._waypointlist[i].connectedNodes),
-            #     else:
-            #         if len(self._waypointlist[i].connectedNodes) == 0:
-            #             print " "
-            #         else:
-            #             print len(self._waypointlist[i].connectedNodes)
-
 
     def timerCallback(self,evprent):
         # Called back rapidly to update odometry
@@ -467,143 +423,6 @@ class GridSpacePathing:
         self._yaw = yaw
         self.RobotPoseInit = True
 
-    # Find the centroid of a frontier and then find the waypoint closest to the centroid and return it
-    def findFrontierCenter(self, frontier):
-        totalX = 0
-        totalY = 0
-        frontierLen = len(frontier)
-
-        for node in frontier:
-            totalX = totalX + node.point.x
-            totalY = totalY + node.point.y
-
-        avgX = totalX / frontierLen
-        avgY = totalY / frontierLen
-
-        tempWayPoint = WayPoint(avgX, avgY, 0)
-
-        closest = self._waypointlist[0]
-        # finds nearest waypoint in the actual grid to neighbor to this point
-        for i in range(len(self._waypointlist)):
-            if self._currmap.data[i] < 70 and self._waypointlist[i].calculateMDistance(
-                    tempWayPoint) < closest.calculateMDistance(tempWayPoint):
-                closest = self._waypointlist[i]
-
-        return closest
-
-    # Return the priority value of a certain frontier based on heuristics
-    def findPriority(self, frontier):
-        distanceTune = 0.5
-        lengthTune = 0.5
-
-        centerFrontierValue = self.findFrontierCenter(frontier)
-
-        # Calculate the distance between the robot and the frontier value
-        distanceToFrontier = centerFrontierValue.calculateMDistance(self._robot)
-        lengthOfFrontier = len(frontier)
-
-        return ((distanceTune * distanceToFrontier) + (lengthTune*lengthOfFrontier))
-
-    # Purpose: Return a waypoint of the best frontier in the frontier list
-    # Input: List of all current frontiers
-    # Output: Waypoint representing the centroid of the best frontier
-    def findBestFrontier(self, frontierList):
-
-        bestPriority = 0
-        bestFrontier = frontierList[0]
-
-        for frontier in frontierList:
-            currentPriority = self.findPriority(frontier)
-            if bestPriority < currentPriority:
-                bestFrontier = frontier
-                bestPriority = self.findPriority(frontier)
-
-        return self.findFrontierCenter(bestFrontier)
-
-    # Create an array of viable frontier nodes
-    def Genfrontier(self, waypointMap):
-        frontiers = []
-        # print("HEYboi")
-        self.front = GridCells()
-        self.front.cells = []
-        for wayp in waypointMap:
-            front = False
-            if(wayp._occ >= 0 and wayp._occ < 70):
-                # print("HEYboi2")
-                for neighbor in wayp.connectedNodes:
-                    if neighbor._occ == -1:
-                        front = True
-                if wayp.connectedNodes >= 4 and front == True:
-                    alreadyFront = False
-                    if wayp in frontiers:
-                        alreadyFront = True
-                    if alreadyFront == False:
-                        # Add a node to the array of frontier waypoints
-                        frontiers.append(wayp)
-                        self.front.cells.append(wayp.point)
-
-        self.front.cell_height = self._currmap.info.resolution * int(
-            math.ceil(self._robotSize / self._currmap.info.resolution))
-        self.front.cell_width = self._currmap.info.resolution * int(
-            math.ceil(self._robotSize / self._currmap.info.resolution))
-        self.front.header.frame_id = "map"
-
-        self._ShowFront.publish(self.front)
-        print("The frontier should have been published")
-        self.groupFrontier(frontiers)
-        # Frontier has been updated
-
-    # Sort through all the frontier nodes in order to determine which ones are close
-    # together
-    # Input: frontier - list of frontier nodes
-    def groupFrontier(self, allFrontierNodes):
-        listOfFrontiers = []
-        alreadyPresent = False
-
-        # Iterate through all of the nodes
-        for baseNode in allFrontierNodes:
-            alreadyPresent = False
-            for frontier in listOfFrontiers:
-                if baseNode in frontier:
-                    # Base node already exists in a frontier
-                    alreadyPresent = True
-
-            if not alreadyPresent:
-                # Node is not in a frontier currently, so create a new frontier and add it to it
-                newFrontier = []
-                newFrontier.append(baseNode)
-                self.addCloseNodes(newFrontier, allFrontierNodes, baseNode)
-                print("This is the length of the added frontier: " + str(len(newFrontier)))
-                listOfFrontiers.append(newFrontier)
-        self.frontierList = listOfFrontiers
-
-    # Recursive algorithm that looks through all the frontier nodes for nodes
-    # that are close enough to be clustered
-    def addCloseNodes(self, newFrontier, allFrontierNodes, baseNode):
-        threshhold = 0.5 # Allowable distance between node clusters
-
-        for node in allFrontierNodes:
-            if node not in newFrontier:
-                distance = node.calculateMDistance(baseNode)
-                #print("This is the distance: " + str(distance))
-                if distance < threshhold:
-                    # This node is close enough so add it to the frontier and use
-                    # it as a new baseNode
-                    newFrontier.append(node)
-                    self.addCloseNodes(newFrontier,allFrontierNodes, node)
-
-    # Create a frontier array with a certain waypoint
-    def CreateFrontier(self, wayp, newFront):
-        newFront.append(wayp)
-        self.front.cells.append(wayp.point)
-        for neighbor in wayp.connectedNodes:
-            if neighbor not in newFront and (wayp._occ > 0 and wayp._occ<70):
-                front = False
-                for neighborValid in neighbor.connectedNodes:
-                    if neighborValid._occ == -1:
-                        front = True
-                if wayp.connectedNodes>=4 and front == True:
-                    self.CreateFrontier(neighbor, newFront)
 
 if __name__ == '__main__':
 

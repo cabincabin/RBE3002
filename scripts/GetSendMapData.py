@@ -77,146 +77,6 @@ class GridSpacePathing:
         #print("here")
         rospy.Timer(rospy.Duration(1), self.CreateMapOccupancy) #will be useful for D*
 
-        # Timers and Subscribers
-        #when a nav goal is published, pathfind to this position.
-        #rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.PathToPos, queue_size=1)
-
-    def PathToPos(self, goal):
-        self._CurrGoal = goal
-        #self.clearAllGrids()
-        #get the goal position from the robot transformation
-        self._odom_list.waitForTransform('map', '/base_footprint', rospy.Time(0), rospy.Duration(2.0))
-        rospy.sleep(1.0)
-        transGoal = self._odom_list.transformPose('map', goal)  # transform the nav goal from the global coordinate system to the robot's coordinate system
-        closest = self._waypointlist[0]
-
-        #create a goal waypoint
-        self._goalWay = WayPoint(transGoal.pose.position.x, transGoal.pose.position.y)
-
-        #finds nearest waypoint in the actual grid to neighbor to this point,
-        #should probably be a new method
-
-        #update the robot's position as it relates to waypoints
-        self._robot = self.FindNNInWayPoints(WayPoint(self._current.position.x, self._current.position.y))
-        for i in range(len(self._waypointlist)):
-            if self._currmap.data[i] != 100 and self._waypointlist[i].calculateMDistance(self._goalWay) < closest.calculateMDistance(self._goalWay):
-                closest = self._waypointlist[i]
-                #print("")
-        self._goalWay = closest
-
-        #for small grids, display in terminal
-        # #for every waypoint in the grid
-        # #print out the waypoint to the user
-        # for i in range(self._currmap.info.height * self._currmap.info.width):
-        #     #print the robot's position
-        #     if self._waypointlist[i] == self._robot:
-        #         print "_",
-        #     #print the goal's position
-        #     elif self._waypointlist[i] == self._goalWay:
-        #         print "'",
-        #     #print the number of nodes each node is connected to
-        #     elif (i + 1) % self._currmap.info.width != 0:
-        #         if len(self._waypointlist[i].connectedNodes) == 0:
-        #             print " ",
-        #         else:
-        #             print len(self._waypointlist[i].connectedNodes),
-        #     else:
-        #         if len(self._waypointlist[i].connectedNodes) == 0:
-        #             print " "
-        #         else:
-        #             print len(self._waypointlist[i].connectedNodes)
-
-        #get the path
-        star = AStar(self._robot, self._goalWay)
-        path = star.findPath()
-
-        # Drawing the path cells
-        grid = GridCells()
-        pathDisp = Path()
-        reached = False
-        self._currPath = []
-        self._currPath.append(self._goalWay)
-        #put the path into GridCells
-        prevNode = self._goalWay
-        while not reached:
-            node = path.get(prevNode)
-            p = Point()
-            p.x = node.point.x
-            p.y = node.point.y
-            p.z = 0
-            pose = PoseStamped()
-            pose.pose.position = node.point
-            pathDisp.poses.append(pose)
-            grid.cells.append(p)
-            prevNode = node
-            self._currPath.append(node)
-            if node.isSame(self._robot):
-                reached = True
-
-        grid.cell_height = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
-        grid.cell_width = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
-        grid.header.frame_id = "map"
-        pathDisp.header.frame_id = "map"
-
-
-        pathDisp.poses.reverse()
-        pathDisp.poses.append(goal)
-
-
-
-        #get only the intermediate changes
-        for i in range(len(pathDisp.poses)-1):
-            if i > 0:
-                #calculate the angle and add it to the corrisponding node
-                ang = math.atan2(-pathDisp.poses[i].pose.position.y+pathDisp.poses[i+1].pose.position.y, -pathDisp.poses[i].pose.position.x+pathDisp.poses[i+1].pose.position.x)
-                quat = quaternion_from_euler(0,0,ang)
-                pathDisp.poses[i].pose.orientation.x = quat[0]
-                pathDisp.poses[i].pose.orientation.y = quat[1]
-                pathDisp.poses[i].pose.orientation.z = quat[2]
-                pathDisp.poses[i].pose.orientation.w = quat[3]
-
-
-        #show the path
-        pathDisp.poses[0].pose.orientation = pathDisp.poses[1].pose.orientation
-        self._ShowPathGrid.publish(grid)
-        self._ShowPathPath.publish(pathDisp)
-
-        self.drawStartAndEnd()
-        self.IsPath = True
-
-    def drawStartAndEnd(self):
-        # Drawing the start cell
-        gridStart = GridCells()
-
-        node = self._robot
-        p = Point()
-        p.x = node.point.x
-        p.y = node.point.y
-        p.z = 0
-        gridStart.cells.append(p)
-        prevNode = node
-
-        gridStart.cell_height = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
-        gridStart.cell_width = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
-        gridStart.header.frame_id = "map"
-        self._ShowStart.publish(gridStart)
-
-        #Draw the ending cell
-        gridEnd = GridCells()
-
-        node = self._goalWay
-        p = Point()
-        p.x = node.point.x
-        p.y = node.point.y
-        p.z = 0
-        gridEnd.cells.append(p)
-
-        gridEnd.cell_height = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
-        gridEnd.cell_width = self._currmap.info.resolution*int(math.ceil(self._robotSize/self._currmap.info.resolution))
-        gridEnd.header.frame_id = "map"
-
-        self._ShowEnd.publish(gridEnd)
-
     def getMapInfo(self, currmap):
         #when the map changes, update the occupancy grid.
         print("here")
@@ -274,13 +134,7 @@ class GridSpacePathing:
                         wayp.connectedNodes = []
                         CheckUpdatePath = True
                     elif isKnown:
-                        # self.Unocc.cells.append(wayp.point)
-                        # self.Unocc.cell_height = self._currmap.info.resolution * int(
-                        #     math.ceil(self._robotSize / self._currmap.info.resolution))
-                        # self.Unocc.cell_width = self._currmap.info.resolution * int(
-                        #     math.ceil(self._robotSize / self._currmap.info.resolution))
-                        # self.Unocc.header.frame_id = "map"
-                        # self._Showunocc.publish(self.Unocc)
+
                         wayp._occ = OccVal
 
         self._showOccupied.publish(self._OccGrids)
@@ -302,13 +156,7 @@ class GridSpacePathing:
             except NameError:
                 print("no Path Yet")
 
-    # def clearAllGrids(self):
-    #     clearMap('/nav_msgs/GridCellsEnd')
-    #     clearMap('/nav_msgs/GridCellsStart')
-    #     clearMap('/nav_msgs/GridCellsPath')
-    #     emptyPath = Path()
-    #     tempPublisher = rospy.Publisher('APlan', Path, queue_size = 1)
-    #     tempPublisher.publish(emptyPath)
+
 
     def CreateMapOccupancy(self, evprent): #this should update all nodes and recompute path if needed
         if self._currmap != None and self.RobotPoseInit == True and self.UpdateOriginalMapOnce == True: #remove the only once boolean for D*, will wait until the robot's position is found
@@ -420,23 +268,6 @@ class GridSpacePathing:
             self._goToFront.publish(p)
             self.frontGoal = bestFrontierCenter
             self.isCurrFrontGoal = True
-            #DRAW THE GRID IN TERMINAL
-            # #for every item in the grid print out the grid to the console
-            # for i in range(len(self._waypointlist)):
-            #     #draw the robot as
-            #     if self._waypointlist[i] == closest:
-            #         print "_",
-            #     elif (i+1) % int(math.floor(self._currmap.info.width/NumOfOcc))!= 0:
-            #         if len(self._waypointlist[i].connectedNodes) == 0:
-            #             print " ",
-            #         else:
-            #             print len(self._waypointlist[i].connectedNodes),
-            #     else:
-            #         if len(self._waypointlist[i].connectedNodes) == 0:
-            #             print " "
-            #         else:
-            #             print len(self._waypointlist[i].connectedNodes)
-
 
     def timerCallback(self,evprent):
         # Called back rapidly to update odometry
@@ -617,14 +448,20 @@ class GridSpacePathing:
 
     # Create a frontier array with a certain waypoint
     def CreateFrontier(self, wayp, newFront):
+        #every time its called
         newFront.append(wayp)
+        #add the frontier
         self.front.cells.append(wayp.point)
+        #for each neighbor
         for neighbor in wayp.connectedNodes:
             if neighbor not in newFront and (wayp._occ > 0 and wayp._occ<70):
+                #if its known and not occupied
                 front = False
+                #if there is and unknown neighbor, identify this as a frontier
                 for neighborValid in neighbor.connectedNodes:
                     if neighborValid._occ == -1:
                         front = True
+                #and recursively call this node to find more frontiers.
                 if wayp.connectedNodes>=4 and front == True:
                     self.CreateFrontier(neighbor, newFront)
 
